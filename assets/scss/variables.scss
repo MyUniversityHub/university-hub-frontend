@@ -1,0 +1,87 @@
+$secondary-color: #ffed4a;
+$text-color: #333;
+$text-secondary-color: #828282;
+
+$primary-color: #007580;
+//$primary-hover-color: darken($primary-color, 10%);
+$disabled-color: #999;
+$border-color: $primary-color;
+$active-bg-color: $primary-color;
+$active-text-color: #fff;
+$disabled-bg-color: #f9f9f9;
+$disabled-border-color: #ddd;
+$hover-transition: background-color 0.3s ease, color 0.3s ease;
+
+// code html new //
+// Màu sắc
+$secondary-color: #af2324;
+$third-color: #333333;
+$background-color: #f5feff;
+$reverse-background-color: #f2f2f2;
+$dark-color: #343a40;
+$light-color: #fff;
+$border-color: #ccc;
+$link-color: #4f4f4f;
+$body-color: #212529;
+$body-col: #ffb68f;
+$body-title: #00696a;
+$line-color: #dcdcdc;
+$background-main-color: #f5feff;
+$placeholder-color: #aaa;
+$background-menu-color: #fafafa;
+$background-header-color: #024f56;
+$border-search: #f2f4f5;
+$background-color-viewer-hover: #fff6de;
+$background-search: #dc3545;
+$background-search-hover: #ff4658;
+$info-color: #5e6368;
+$border-search-candidate: #e5e7eb;
+// Kích thước
+$font-size-large: 24px;
+$border-radius: 6px;
+// Typography
+$font-family: "Roboto", sans-serif;
+$font-custom: "UTM Bebas", sans-serif;
+$font-size-base: 16px;
+
+// Spacing
+$spacer: 30px;
+$card-padding: 30px;
+
+// Breakpoints
+$breakpoint-extra-small: 360px; // Các thiết bị di động rất nhỏ
+$breakpoint-small: 576px; // Điện thoại di động nhỏ
+$breakpoint-mobile: 768px; // Điện thoại di động lớn
+$breakpoint-tablet: 992px; // Máy tính bảng
+$breakpoint-laptop: 1200px; // Máy tính xách tay
+$breakpoint-desktop: 1440px; // Máy tính để bàn lớn
+$breakpoint-large-desktop: 1600px; // Màn hình lớn hơn
+
+// Grid settings
+$grid-columns: 12; // Số cột trong grid
+$gutter-width: 24px; // Khoảng cách giữa các cột
+
+$darken-percentage: 10;
+
+$color-search: #555555;
+$border-table: #dee2e6;
+
+$text-green: #28a745;
+$text-danger: #dc3545;
+$text-blue: #3974f9;
+$text-orange: #ff9900;
+$box-shadow: #0000001a;
+
+$background-color-th: #e6f2f2;
+$background-color-table: #f7faf7;
+$background-danger: #fff1f0;
+
+$color-tilte: #000;
+
+$background-header2: #f6f5f0;
+$border-color-content2: #e0e0e0;
+$background-color-content2: #f0f0f0;
+
+$background-card: #eeeeee;
+$color-card:#4A4A4A;
+$gap-cv: 15px;
