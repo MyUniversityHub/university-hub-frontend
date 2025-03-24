@@ -3,7 +3,7 @@
 </script>
 
 <template>
-<h1>OKOK</h1>
+<h1>OKO</h1>
 </template>
 
 <style scoped lang="scss">

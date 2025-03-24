@@ -9,9 +9,29 @@ export interface MenuItem {
 
 export const menuItems: MenuItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Trang chủ',
         icon: ' fas fa-home',
         path: '/admin/dashboard',
+    },
+    {
+        title: 'Quản lý khoa',
+        icon: ' fas fa-home',
+        path: '/admin/departments',
+    },
+    {
+        title: 'Quản lý chuyên ngành',
+        icon: ' fas fa-home',
+        path: '/admin/departments',
+    },
+    {
+        title: 'Quản lý lớp học',
+        icon: ' fas fa-home',
+        path: '/admin/departments',
+    },
+    {
+        title: 'Quản lý người dùng',
+        icon: ' fas fa-home',
+        path: '/admin/departments',
     }
 ];
 

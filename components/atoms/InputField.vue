@@ -8,7 +8,7 @@
         ]">
     <!-- Label -->
     <div v-if="label" :class="[labelClass, labelPosition === 'border' ? 'label-border' : '']">
-      <label class="block font-medium text-gray-700" :for="id">
+      <label class="block text-sm font-medium text-gray-900 dark:text-white" :for="id">
         {{ label }}
         <span class="text-danger" v-if="required">*</span>
       </label>
@@ -29,7 +29,7 @@
           :disabled="disabled"
           :placeholder="placeholder"
           v-model="model"
-          class="common-input w-full px-3 py-2  "
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           @input="formatInput"
           @blur="emit('blur', $event)"
           @keyup.enter="emit('blur', $event)"
@@ -131,7 +131,7 @@
           :disabled="disabled"
           :placeholder="placeholder"
           v-model="model"
-          class="common-input w-full px-3 py-2"
+          class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 fw-500"
           @blur="emit('blur', $event)"
       />
 
@@ -197,7 +197,7 @@
             :disabled="disabled"
             :placeholder="placeholder"
             v-model="model"
-            class="common-input w-full px-3 py-2  "
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             @blur="emit('blur', $event)"
         />
         <button type="button" class="absolute right-[12px] top-1/2 -translate-y-1/2" @click="togglePass">
@@ -378,4 +378,11 @@ const handleCheckboxChange = (event, uncheckedValue) => {
   line-height: 14px;
   z-index: 1299;
 }
+textarea::placeholder {
+  color: #a0a5b1; /* Màu xám nhạt */
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 </style>

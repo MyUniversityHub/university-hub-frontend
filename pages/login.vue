@@ -34,7 +34,6 @@ type FormValues = {
 };
 
 const onSubmit = async () => {
-  useNuxtApp().$toast.success("OKOK");
   try {
     const response = await apiClient.post<LoginResponse>(
         '/login',
@@ -71,43 +70,45 @@ const onSubmit = async () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center grow bg-center bg-no-repeat page-bg min-w-[400px]">
-    <div class="card w-full">
-      <VeeForm @submit="onSubmit" class="card-body flex flex-col gap-5 p-10" id="sign_in_form">
-        <div class="text-center mb-2.5">
-          <h3 class="text-lg font-medium text-gray-900 leading-none mb-2.5">
-            Đăng nhập
-          </h3>
-        </div>
-        <div>
-          <InputField
-              id="user_name"
-              name="user_name"
-              label="Tên đăng nhập"
-              rules="required|no_emojis"
-              placeholder="Nhập tên đăng nhập"
-              labelPosition="top"
-              :required="true"
-              v-model="formData.user_name"
-              labelClass="w-2/4"
-              inputClass="flex-1"
-          />
-          <InputField
-              id="password"
-              name="password"
-              input-type="password"
-              label="Mật khẩu"
-              rules="required|no_emojis"
-              placeholder="Nhập mật khẩu"
-              labelPosition="top"
-              :required="true"
-              v-model="formData.password"
-              labelClass="w-2/4"
-              inputClass="flex-1"
-          />
-        </div>
-        <Button type="submit" label="Đăng nhập" class="btn-primary" />
-      </VeeForm>
+  <div class="w-1/3 mx-auto mt-[150px]">
+    <div class="flex items-center justify-center grow bg-center bg-no-repeat page-bg min-w-[400px]">
+      <div class="card w-full">
+        <VeeForm @submit="onSubmit" class="card-body flex flex-col gap-5 p-10" id="sign_in_form">
+          <div class="text-center mb-2.5">
+            <h3 class="text-lg font-medium text-gray-900 leading-none mb-2.5">
+              Đăng nhập
+            </h3>
+          </div>
+          <div>
+            <InputField
+                id="user_name"
+                name="user_name"
+                label="Tên đăng nhập"
+                rules="required|no_emojis"
+                placeholder="Nhập tên đăng nhập"
+                labelPosition="top"
+                :required="true"
+                v-model="formData.user_name"
+                labelClass="w-2/4"
+                inputClass="flex-1"
+            />
+            <InputField
+                id="password"
+                name="password"
+                input-type="password"
+                label="Mật khẩu"
+                rules="required|no_emojis"
+                placeholder="Nhập mật khẩu"
+                labelPosition="top"
+                :required="true"
+                v-model="formData.password"
+                labelClass="w-2/4"
+                inputClass="flex-1"
+            />
+          </div>
+          <Button type="submit" label="Đăng nhập" class="btn-primary" />
+        </VeeForm>
+      </div>
     </div>
   </div>
 </template>
