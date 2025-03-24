@@ -22,107 +22,69 @@ async function logout() {
   }
 }
 
+const hidden = ref(false);
+
+const openPopup = () => {
+  hidden.value = !hidden.value;
+};
+
 const userStore = useUserStore();
 </script>
 
 <template>
   <!-- Header -->
-  <header
-      class="header fixed top-0 z-10 start-0 end-3 flex justify-center items-stretch shrink-0 bg-[--tw-page-bg]"
-      data-sticky="true" data-sticky-class="shadow-sm" data-sticky-name="header" id="header">
-    <!-- Container -->
-    <div class="container flex justify-between items-stretch lg:gap-4" id="header_container">
-      <!-- Mobile Logo -->
-      <div class="flex gap-1 lg:hidden items-center -ms-1">
-        <NuxtLink class="shrink-0" to="/">
-          <img class="max-h-[25px] w-full" src="/assets/media/app/logo.svg"/>
-        </NuxtLink>
-
-        <div class="flex items-center">
-          <button class="btn btn-icon btn-light btn-clear btn-sm" data-drawer-toggle="#sidebar">
-            <i class="ki-filled ki-menu">
-            </i>
+  <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center justify-start rtl:justify-end">
+          <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+            <span class="sr-only">Open sidebar</span>
+            <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+            </svg>
           </button>
+          <a href="https://flowbite.com" class="flex ms-2 md:me-24">
+            <img src="https://flowbite.com/docs/images/logo.svg" class="h-8 me-3" alt="FlowBite Logo" />
+            <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Flowbite</span>
+          </a>
         </div>
-      </div>
-      <!-- End of Mobile Logo -->
-      <!--Megamenu Contaoner-->
-      <div class="flex items-stretch" id="mega_menu_container">
-        <!--Megamenu Inner-->
-        <div class="flex items-stretch" data-reparent="true" data-reparent-mode="prepend|lg:prepend"
-             data-reparent-target="body|lg:#mega_menu_container">
-          <!--Megamenu Wrapper-->
-          <div class="hidden lg:flex lg:items-stretch" data-drawer="true"
-               data-drawer-class="drawer drawer-start fixed z-10 top-0 bottom-0 w-full me-5 max-w-[250px] p-5 lg:p-0 overflow-auto"
-               data-drawer-enable="true|lg:false" id="mega_menu_wrapper">
-          </div>
-          <!--End of Megamenu Wrapper-->
-        </div>
-        <!--End of Megamenu Inner-->
-      </div>
-      <!--End of Megamenu Contaoner-->
-      <!-- Topbar -->
-      <div class="flex items-center gap-2 lg:gap-3.5">
-        <div class="menu" data-menu="true">
-          <div class="menu-item" data-menu-item-offset="20px, 10px" data-menu-item-offset-rtl="-20px, 10px"
-               data-menu-item-placement="bottom-end" data-menu-item-placement-rtl="bottom-start"
-               data-menu-item-toggle="dropdown" data-menu-item-trigger="click|lg:click">
-            <div class="menu-toggle btn btn-icon rounded-full">
-              <img alt="" class="size-9 rounded-full border-2 border-success shrink-0"
-                   src="/assets/media/avatars/300-2.png">
-              </img>
+        <div class="flex items-center">
+          <div class="flex items-center ms-3 relative" @click="openPopup">
+            <div>
+              <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                <span class="sr-only">Open user menu</span>
+                <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo">
+              </button>
             </div>
-            <div class="menu-dropdown menu-default light:border-gray-300 w-screen max-w-[250px]">
-              <div class="flex items-center justify-between px-5 py-1.5 gap-1.5">
-                <div class="flex items-center gap-2">
-                  <img alt="" class="size-9 rounded-full border-2 border-success"
-                       src="/assets/media/avatars/300-2.png"/>
-                  <div class="flex flex-col gap-1.5">
-              <span class="text-sm text-gray-800 font-semibold leading-none">
-                {{ userStore.name }}
-              </span>
-                    <a class="text-xs text-gray-600 hover:text-primary font-medium leading-none"
-                    >
-                      {{ userStore.email }}
-                    </a>
-                  </div>
-                </div>
-                <!--                <span class="badge badge-xs badge-primary badge-outline">-->
-                <!--            Pro-->
-                <!--           </span>-->
+            <div v-if="hidden" class="z-50 absolute right-0 top-[20px] my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="dropdown-user">
+              <div class="px-4 py-3" role="none">
+                <p class="text-sm text-gray-900 dark:text-white" role="none">
+                  {{ userStore.name }}
+                </p>
+                <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
+                  {{ userStore.email }}
+                </p>
               </div>
-              <div class="menu-separator">
-              </div>
-              <div class="flex flex-col">
-                <div class="menu-item">
-                  <NuxtLink class="menu-link" :to="'/profile'">
-             <span class="menu-icon">
-              <i class="ki-filled ki-profile-circle">
-              </i>
-             </span>
-                    <span class="menu-title">
-              Tài khoản
-             </span>
-                  </NuxtLink>
-                </div>
-              </div>
-              <div class="menu-separator">
-              </div>
-              <div class="flex flex-col">
-                <div class="menu-item px-4 py-1.5">
-                  <a class="btn btn-sm btn-light justify-center" @click="logout">
-                    Đăng xuất
-                  </a>
-                </div>
-              </div>
+              <ul class="py-1" role="none">
+                <li>
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Dashboard</a>
+                </li>
+                <li>
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Settings</a>
+                </li>
+                <li>
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Earnings</a>
+                </li>
+                <li @click="logout">
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Đăng xuất</a>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
-      <!-- End of Topbar -->
     </div>
-    <!-- End of Container -->
-  </header>
-  <!-- End of Header -->
+  </nav>
+  <!-- End Header -->
 
 </template>
