@@ -40,7 +40,6 @@ export default defineNuxtPlugin((nuxtApp) => {
             const fieldLabel = context.label || context.field;
             const ruleName = context.rule?.name;
             const ruleParams = context.rule?.params || [];
-
             if (!ruleName) {
                 return `The field ${fieldLabel} is invalid.`;
             }
@@ -87,6 +86,20 @@ export default defineNuxtPlugin((nuxtApp) => {
     defineRule('requiredDateRange', (value) => {
         if (!value || value.length !== 2 || value[0] === null || value[1] === null) {
             return 'Vui lòng chọn khoảng ngày hợp lệ';
+        }
+        return true;
+    });
+
+    defineRule('latin_numbers_only', (value) => {
+        if (!/^[A-Za-z0-9]+$/.test(value)) {
+            return 'Chỉ được nhập chữ cái Latin và số, không chứa ký tự đặc biệt!';
+        }
+        return true;
+    });
+
+    defineRule('only_letters', (value) => {
+        if (!/^[\p{L}\s]+$/u.test(value)) {
+            return 'Chỉ được nhập chữ cái, không cho phép số hoặc ký tự đặc biệt!';
         }
         return true;
     });
