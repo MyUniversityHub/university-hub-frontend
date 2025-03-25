@@ -73,7 +73,7 @@ const deleteMessage = computed(() => {
 });
 
 const handleCloseFormCreate = () => {
-  if (isFormDirty.value || name.value || alias.value) {
+  if (isFormDirty.value) {
     const confirmClose = window.confirm("Dữ liệu đã thay đổi. Bạn có chắc chắn muốn đóng?");
     if (!confirmClose) return;
   }
@@ -319,7 +319,7 @@ const columns = [
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required|max:120"
+          rules="required|max:20|latin_numbers_only"
       />
       <InputField
           id="name"
@@ -330,7 +330,7 @@ const columns = [
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required"
+          rules="required|only_letters|max:120"
       />
       <InputField
           id="description"
@@ -342,7 +342,7 @@ const columns = [
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required"
+          rules="required|no_emojis"
       />
     </VeeForm>
     <template #footer>
