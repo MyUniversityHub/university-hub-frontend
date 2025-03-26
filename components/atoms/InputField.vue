@@ -317,9 +317,6 @@ const togglePass = () => {
   isVisiblePass.value = !isVisiblePass.value;
 };
 const errors = useFormErrors();
-watch(errors, (newErrors) => {
-  console.log("🚨 Errors changed:", newErrors);
-}, { deep: true })
 const model = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
@@ -336,28 +333,28 @@ const handleCheckboxChange = (event, uncheckedValue) => {
   const target = event.target;
   model.value = target.checked ? Number(target.value) : uncheckedValue;
 };
-// onMounted(() => {
-//   nextTick(() => {
-//     $('.select2').each(function () {
-//       let $this = $(this);
-//       if ($this.data('select2')) {
-//         $this.select2('destroy');
-//       }
-//
-//       let placeholderText = $this.attr('placeholder');
-//       $this.select2({
-//         width: '100%',
-//         placeholder: placeholderText,
-//         allowClear: true
-//       }).on('change', function () {
-//         const selectedValue = $(this).val();
-//         if ($this.attr('id') === props.id) {
-//           emit('update:modelValue', selectedValue);
-//         }
-//       });
-//     });
-//   });
-// });
+onMounted(() => {
+  nextTick(() => {
+    $('.select2').each(function () {
+      let $this = $(this);
+      if ($this.data('select2')) {
+        $this.select2('destroy');
+      }
+
+      let placeholderText = $this.attr('placeholder');
+      $this.select2({
+        width: '100%',
+        placeholder: placeholderText,
+        allowClear: true
+      }).on('change', function () {
+        const selectedValue = $(this).val();
+        if ($this.attr('id') === props.id) {
+          emit('update:modelValue', selectedValue);
+        }
+      });
+    });
+  });
+});
 </script>
 <style lang="scss" scoped>
 .is-invalid {

@@ -21,7 +21,7 @@ export const menuItems: MenuItem[] = [
     {
         title: 'Quản lý chuyên ngành',
         icon: ' fas fa-home',
-        path: '/admin/departments',
+        path: '/admin/majors',
     },
     {
         title: 'Quản lý lớp học',

@@ -15,6 +15,11 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
+  plugins: [
+    '~/plugins/vee-validate',
+    '~/plugins/select2-client',
+    '~/plugins/tooltip-client'
+  ],
   runtimeConfig: {
     public: {
       apiUrl: process.env.API_BASE_URL,
