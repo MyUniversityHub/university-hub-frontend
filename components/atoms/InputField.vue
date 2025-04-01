@@ -348,13 +348,19 @@ onMounted(() => {
         allowClear: true
       }).on('change', function () {
         const selectedValue = $(this).val();
+
+        // Cập nhật modelValue
         if ($this.attr('id') === props.id) {
           emit('update:modelValue', selectedValue);
         }
+
+        // Nếu component có sự kiện @change thì gọi nó
+        emit('change', selectedValue);
       });
     });
   });
 });
+
 </script>
 <style lang="scss" scoped>
 .is-invalid {
