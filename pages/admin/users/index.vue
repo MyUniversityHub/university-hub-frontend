@@ -8,21 +8,46 @@ import {useSlugGenerator} from "~/composables/useSlugGenerator";
 import {useFormValidation} from "~/composables/useFormValidation";
 import Card from "~/components/molecules/Card.vue";
 import CommonModal from "~/components/atoms/modal/CommonModal.vue";
+import id from "@redocly/ajv/lib/vocabularies/core/id";
 const defaultFormCreate = {
   id: 0,
-  code: '',
   name: '',
-  description: '',
+  user_name: '',
+  email: '',
+  password: '',
+  role_id: '',
+  class_id: 0,
   active: 1,
 };
 
 const params = reactive({
-  code: '',
-  name: ''
+  name: '',
+  courseYear: '',
+  major: ''
 });
+
+type Options = {
+  value: number,
+  label: string
+};
+
+const allClasses = ref<Options[]>([]);
+const majors = ref<Options[]>([]);
+const majorMap = ref<Map<number, string>>(new Map());
+
+const roles = ref<Options[]>([]);
+const roleMap = ref<Map<number, string>>(new Map());
+
+const departments = ref<Options[]>([]);
+const departmentMap = ref<Map<number, string>>(new Map());
+
+const classes = ref<Options[]>([]);
 
 const visibleDeleteModal = ref(false)
 const visibleCreateModal = ref(false)
+
+const selectedDepartment = ref(0);
+const selectedMajor = ref(0);
 
 const { formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
 const isSingleDelete = ref<boolean>(false);
@@ -37,7 +62,7 @@ const {
   handleSelectAll,
   handleSelectMultiple,
   fetchData
-} = useCommonList("/admin/departments", params);
+} = useCommonList("/admin/users", params);
 
 const handleDelete = async () => {
   visibleDeleteModal.value = false;
@@ -50,7 +75,7 @@ const handleDelete = async () => {
     ids.value = [...selectedIds.value];
   }
   try {
-    const res = await apiClient.delete('/admin/departments/bulk-delete', {
+    const res = await apiClient.delete('/admin/classes/bulk-delete', {
       body: { ids: ids.value }
     });
     if (res.status) {
@@ -64,12 +89,124 @@ const handleDelete = async () => {
   }
 };
 
+const fetchRolesActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/roles/active`);
+    if(response && response.status) {
+      const tempRoles: Role[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((role: any) => {
+        const newRole = { label: role.name, value: role.id };
+        tempRoles.push(newRole);
+        tempMap.set(newRole.value, newRole.label);
+      });
+
+      roles.value = tempRoles;
+      roleMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
+const fetchMajorsByDepartment = async () => {
+  try {
+    const response = await apiClient.get(`/admin/majors/department/${selectedDepartment.value}`);
+    if(response && response.status) {
+      const tempMajors: Major[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((major: any) => {
+        const newMajor = { label: major.name, value: major.id };
+        tempMajors.push(newMajor);
+        tempMap.set(newMajor.value, newMajor.label);
+      });
+
+      majors.value = tempMajors;
+      majorMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
+const fetchDepartmentsActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/departments/active`);
+    if(response && response.status) {
+      const tempDepartments: Department[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((department: any) => {
+        const newDepartment = { label: department.name, value: department.id };
+        tempDepartments.push(newDepartment);
+        tempMap.set(newDepartment.value, newDepartment.label);
+      });
+
+      departments.value = tempDepartments;
+      departmentMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
+const fetchClassesByMajor = async () => {
+  try {
+    const response = await apiClient.get(`/admin/classes/major/${selectedMajor.value}`);
+    if(response && response.status) {
+      const tempClasses: Class[] = [];
+      // const tempMap = new Map<number, string>();
+
+      response.data.forEach((classes: any) => {
+        const newClass = { label: classes.name, value: classes.id };
+        tempClasses.push(newClass);
+        // tempMap.set(newDepartment.value, newDepartment.label);
+      });
+
+      classes.value = tempClasses;
+      // departmentMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
+const fetchClassesActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/classes/active`);
+    if(response && response.status) {
+      const tempClasses: Class[] = [];
+      // const tempMap = new Map<number, string>();
+
+      response.data.forEach((classes: any) => {
+        const newClass = { label: classes.name, value: classes.id };
+        tempClasses.push(newClass);
+        // tempMap.set(newDepartment.value, newDepartment.label);
+      });
+
+      allClasses.value = tempClasses;
+      // departmentMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
+onMounted(() => {
+  fetchRolesActive();
+  fetchDepartmentsActive();
+  fetchClassesActive();
+})
+
+
 const deleteMessage = computed(() => {
   const count = selectedIds.value.size;
-  if(isSingleDelete.value) return `Bạn có chắc chắn muốn xóa khoa với ID ${[...selectedIds.value].at(-1)} không?`
+  if(isSingleDelete.value) return `Bạn có chắc chắn muốn xóa lớp học với ID ${[...selectedIds.value].at(-1)} không?`
   return count === 1
-      ? `Bạn có chắc chắn muốn xóa khoa với ID ${[...selectedIds.value][0]} không?`
-      : `Bạn có chắc chắn muốn xóa ${count} khoa này không?`;
+      ? `Bạn có chắc chắn muốn xóa lớp học với ID ${[...selectedIds.value][0]} không?`
+      : `Bạn có chắc chắn muốn xóa ${count} lớp học này không?`;
 });
 
 const handleCloseFormCreate = () => {
@@ -113,28 +250,30 @@ const showFormCreate = () => {
 
 const handleCreate = async () => {
   if (formData) {
+    formData.major_id = Number(formData.major_id);
     try {
-      const response = await apiClient.post(`/admin/departments`, {...formData});
+      const response = await apiClient.post(`/admin/classes`, {...formData});
       useNuxtApp().$toast.success(response.message);
       await fetchData();
       resetForm()
       visibleCreateModal.value = false;
     } catch (e) {
-      console.error("Error creating departments:", e);
+      console.error("Error creating classes:", e);
     }
   }
 };
 
 const handleUpdate = async () => {
   if (formData) {
+    formData.major_id = Number(formData.major_id);
     try {
-      const response = await apiClient.put(`/admin/departments/${formData.id}`, {...formData});
+      const response = await apiClient.put(`/admin/classes/${formData.id}`, {...formData});
       useNuxtApp().$toast.success(response.message);
       await fetchData();
       resetForm()
       visibleCreateModal.value = false;
     } catch (e) {
-      console.error("Error updating departments:", e);
+      console.error("Error updating classes:", e);
     }
   }
 };
@@ -143,13 +282,13 @@ const handleUpdateStatus = async (event: Event, id: number) => {
   const checkbox = event.target as HTMLInputElement;
   const isCheck = checkbox.checked;
   try {
-    const response = await apiClient.put(`/admin/departments/${id}/update-status`, {active: isCheck});
+    const response = await apiClient.put(`/admin/classes/${id}/update-status`, {active: isCheck});
     useNuxtApp().$toast.success(response.message);
     await fetchData();
     resetForm()
     visibleCreateModal.value = false;
   } catch (e) {
-    console.error("Error updating active departments:", e);
+    console.error("Error updating active classes:", e);
   }
 };
 
@@ -191,17 +330,27 @@ const columns = [
       ]);
     },
   }),
-  columnHelper.accessor('code', {
-    header: 'Mã khoa',
-    cell: info => info.getValue(),
-    meta: { headerClassName: '', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
-  }),
   columnHelper.accessor('name', {
-    header: 'Tên khoa',
+    header: 'Tên người dùng',
     cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('user_name', {
+    header: 'Tên tài khoản',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('email', {
+    header: 'Email',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('role_id', {
+    header: 'Vai trò',
+    cell: info => roleMap.value.get(info.getValue()),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
-  columnHelper.accessor('status', {
+  columnHelper.accessor('active', {
     header: 'Trạng thái',
     cell: ({ row }) => {
       const id = row.original?.id;
@@ -256,7 +405,7 @@ const columns = [
 
 <template>
   <div class="grid gap-5 lg:gap-7.5">
-    <Card title="Danh sách khoa" :isAction="true">
+    <Card title="Danh sách lớp học" :isAction="true">
       <template #button>
         <MenuButtonAction :on-delete="showFormDelete"
                           :number="selectedIds.size"
@@ -265,21 +414,33 @@ const columns = [
       <template #action>
         <div class="flex items-center justify-center gap-2">
           <InputField
-              id="departmentCode"
-              name="departmentCode"
-              label="Tên mã khoa"
-              placeholder="Tìm theo mã khoa"
-              v-model="params.code"
+              id="classParams"
+              name="classParams"
+              label="Lớp"
+              v-model="params.major"
+              :dataOptions="allClasses"
+              inputType="select2"
+              labelPosition="border"
+              labelClass="hidden"
+              inputClass="w-[200px]"
+              selectPlaceholder="Chọn lớp"
+          />
+          <InputField
+              id=""
+              name="className"
+              label="Tên lớp học"
+              placeholder="Tìm theo tên lớp học"
+              v-model="params.name"
               labelPosition="border"
               labelClass="hidden"
               inputClass="w-[200px]"
           />
           <InputField
-              id="departmentName"
-              name="departmentName"
-              label="Tên khoa"
-              placeholder="Tìm theo tên khoa"
-              v-model="params.name"
+              id="courseYear"
+              name="courseYear"
+              label="Năm học"
+              placeholder="Tìm theo năm học"
+              v-model="params.courseYear"
               labelPosition="border"
               labelClass="hidden"
               inputClass="w-[200px]"
@@ -306,44 +467,108 @@ const columns = [
       @confirm="formData.id ? handleUpdate() : handleCreate()"
       :isFormDirty="isFormDirty">
     <template #header>
-      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} khoa</h2>
+      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} người dùng</h2>
     </template>
     <VeeForm @submit="formData.id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
       <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
       <InputField
-          id="code"
-          name="code"
-          label="Mã khoa"
-          placeholder="Nhập mã khoa"
-          v-model="formData.code"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|max:20|latin_numbers_only"
-      />
-      <InputField
           id="name"
           name="name"
-          label="Tên khoa"
-          placeholder="Nhập tên khoa"
+          label="Tên người dùng"
+          placeholder="Nhập tên người dùng"
           v-model="formData.name"
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required|only_letters|max:120"
+          rules="required|latin_numbers_only|max:50"
       />
       <InputField
-          id="description"
-          name="description"
-          input-type="textarea"
-          label="Mô tả"
-          placeholder="Nhập mô tả"
-          v-model="formData.description"
+          id="userName"
+          name="userName"
+          label="Tên tài khoản"
+          placeholder="Nhập tên tài khoản"
+          v-model="formData.user_name"
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required|no_emojis"
+          rules="required|latin_numbers_only|max:50"
       />
+      <InputField
+          id="email"
+          name="email"
+          label="Email"
+          placeholder="Nhập email"
+          v-model="formData.email"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|max:50"
+      />
+      <InputField
+          id="password"
+          name="password"
+          label="Mật khẩu"
+          placeholder="Nhập mật khẩu"
+          v-model="formData.password"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|max:50"
+      />
+      <InputField
+          id="typeUser"
+          name="typeUser"
+          label="Vai trò"
+          v-model="formData.role_id"
+          :dataOptions="roles"
+          inputType="select2"
+          :required="true"
+          rules="required"
+          inputClass="w-full"
+          selectPlaceholder="Chọn quyền"
+      />
+      <div v-if="formData.role_id === '2' || formData.role_id === '3'">
+        <InputField
+            id="department"
+            name="department"
+            label="Khoa"
+            v-model="selectedDepartment"
+            :dataOptions="departments"
+            inputType="select2"
+            :required="true"
+            rules="required"
+            inputClass="w-full"
+            selectPlaceholder="Chọn quyền"
+            @change="fetchMajorsByDepartment"
+        />
+        <InputField
+            id="major"
+            name="major"
+            label="Chuyên ngành"
+            v-model="selectedMajor"
+            :dataOptions="majors"
+            inputType="select2"
+            :required="true"
+            rules="required"
+            inputClass="w-full"
+            selectPlaceholder="Chọn chuyên ngành"
+            @change="fetchClassesByMajor"
+        />
+        <div v-if="formData.role_id === '2'">
+          <InputField
+              id="classes"
+              name="classes"
+              label="Lớp"
+              v-model="formData.class_id"
+              :dataOptions="classes"
+              inputType="select2"
+              :required="true"
+              rules="required"
+              inputClass="w-full"
+              selectPlaceholder="Chọn lớp"
+          />
+        </div>
+      </div>
     </VeeForm>
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>

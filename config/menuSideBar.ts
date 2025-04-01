@@ -21,17 +21,31 @@ export const menuItems: MenuItem[] = [
     {
         title: 'Quản lý chuyên ngành',
         icon: ' fas fa-home',
-        path: '/admin/departments',
+        path: '/admin/majors',
     },
     {
         title: 'Quản lý lớp học',
         icon: ' fas fa-home',
-        path: '/admin/departments',
+        path: '/admin/classes',
     },
     {
         title: 'Quản lý người dùng',
         icon: ' fas fa-home',
-        path: '/admin/departments',
+        path: '/admin/users',
+        children: [
+            {
+                title: 'Quản lý admin',
+                path: '/admin/admins',
+            },
+            {
+                title: 'Quản lý sinh viên',
+                path: '/admin/students',
+            },
+            {
+                title: 'Quản lý giảng viên',
+                path: '/admin/teachers'
+            }
+        ]
     }
 ];
 
