@@ -5,7 +5,7 @@ export const useUserStore = defineStore('user', () => {
     const id = ref<number | null>(null);
     const name = ref<string | null>(null);
     const email = ref<string | null>(null);
-    const username = ref<string | null>(null);
+    const user_name = ref<string | null>(null);
     const roleId = ref<number | null>(null);
     const roleName = ref<string | null>(null);
     const active = ref<boolean | null>(null);
@@ -16,7 +16,7 @@ export const useUserStore = defineStore('user', () => {
         id: id.value,
         name: name.value,
         email: email.value,
-        username: username.value,
+        user_name: user_name.value,
         roleId: roleId.value,
         roleName: roleName.value,
         active: active.value,
@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
         // Lưu thông tin user
         id.value = userData.info.id;
         name.value = userData.info.name;
-        username.value = userData.info.user_name; // Đảm bảo đúng key
+        user_name.value = userData.info.user_name; // Đảm bảo đúng key
         email.value = userData.info.email;
         roleId.value = userData.info.role_id;
         createdAt.value = userData.info.created_at;
@@ -59,7 +59,7 @@ export const useUserStore = defineStore('user', () => {
         id.value = null;
         name.value = null;
         email.value = null;
-        username.value = null;
+        user_name.value = null;
         roleId.value = null;
         roleName.value = null;
         active.value = null;
@@ -87,7 +87,7 @@ export const useUserStore = defineStore('user', () => {
         id,
         name,
         email,
-        username,
+        user_name,
         roleId,
         roleName,
         active,
