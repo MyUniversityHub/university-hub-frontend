@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import {useRouter} from 'vue-router';
 import {useUserStore} from "~/stores/userStore";
+import CommonModal from "~/components/atoms/modal/CommonModal.vue";
 
 const router = useRouter();
+const visibleUpdateModal = ref(false);
 
+const handleCloseFormCreate = () => {
+  if (isFormDirty.value) {
+    const confirmClose = window.confirm("Dữ liệu đã thay đổi. Bạn có chắc chắn muốn đóng?");
+    if (!confirmClose) return;
+  }
+  visibleCreateModal.value = false;
+};
 async function logout() {
   try {
     // Gửi yêu cầu logout tới server
@@ -56,7 +65,7 @@ const userStore = useUserStore();
                 <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo">
               </button>
             </div>
-            <div v-if="hidden" class="z-50 absolute right-0 top-[20px] my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="dropdown-user">
+            <div v-if="hidden" class="absolute right-0 top-[20px] my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="dropdown-user" style="z-index: 100;">
               <div class="px-4 py-3" role="none">
                 <p class="text-sm text-gray-900 dark:text-white" role="none">
                   {{ userStore.name }}
@@ -67,13 +76,7 @@ const userStore = useUserStore();
               </div>
               <ul class="py-1" role="none">
                 <li>
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Dashboard</a>
-                </li>
-                <li>
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Settings</a>
-                </li>
-                <li>
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Earnings</a>
+                  <NuxtLink to="/admin/account" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Tài khoản</NuxtLink>
                 </li>
                 <li @click="logout">
                   <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Đăng xuất</a>
@@ -86,5 +89,57 @@ const userStore = useUserStore();
     </div>
   </nav>
   <!-- End Header -->
-
+  <CommonModal
+      :visible="visibleUpdateModal"
+      title="Thay đổi mật khẩu"
+      width="800px"
+      @close="handleCloseFormCreate"
+      @clickOutside="handleCloseFormCreate"
+      @confirm="formData.id ? handleUpdate() : handleCreate()"
+      :isFormDirty="isFormDirty">
+    <template #header>
+      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} khoa</h2>
+    </template>
+    <VeeForm @submit="formData.id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
+      <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
+      <InputField
+          id="code"
+          name="code"
+          label="Mã khoa"
+          placeholder="Nhập mã khoa"
+          v-model="formData.code"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|max:20|latin_numbers_only"
+      />
+      <InputField
+          id="name"
+          name="name"
+          label="Tên khoa"
+          placeholder="Nhập tên khoa"
+          v-model="formData.name"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|only_letters|max:120"
+      />
+      <InputField
+          id="description"
+          name="description"
+          input-type="textarea"
+          label="Mô tả"
+          placeholder="Nhập mô tả"
+          v-model="formData.description"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|no_emojis"
+      />
+    </VeeForm>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>
+      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.id ? 'Cập nhật' : 'Thêm mới'}}</button>
+    </template>
+  </CommonModal>
 </template>

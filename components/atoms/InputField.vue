@@ -379,7 +379,7 @@ onMounted(() => {
   background-color: white;
   font-size: 14px;
   line-height: 14px;
-  z-index: 1299;
+  //z-index: 50;
 }
 textarea::placeholder {
   color: #a0a5b1; /* Màu xám nhạt */
