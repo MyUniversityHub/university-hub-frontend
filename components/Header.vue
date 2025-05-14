@@ -6,6 +6,12 @@ import CommonModal from "~/components/atoms/modal/CommonModal.vue";
 const router = useRouter();
 const visibleUpdateModal = ref(false);
 
+const userStore = useUserStore();
+const accountPath = computed(() => {
+  const role = userStore.roleName.toLowerCase(); // Get the role and convert it to lowercase
+  return `/${role}/account`; // Construct the path dynamically
+});
+
 const handleCloseFormCreate = () => {
   if (isFormDirty.value) {
     const confirmClose = window.confirm("Dữ liệu đã thay đổi. Bạn có chắc chắn muốn đóng?");
@@ -36,8 +42,6 @@ const hidden = ref(false);
 const openPopup = () => {
   hidden.value = !hidden.value;
 };
-
-const userStore = useUserStore();
 </script>
 
 <template>
@@ -76,7 +80,7 @@ const userStore = useUserStore();
               </div>
               <ul class="py-1" role="none">
                 <li>
-                  <NuxtLink to="/admin/account" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Tài khoản</NuxtLink>
+                  <NuxtLink :to="accountPath" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Tài khoản</NuxtLink>
                 </li>
                 <li @click="logout">
                   <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Đăng xuất</a>

@@ -1,0 +1,550 @@
+<script setup lang="ts">
+import {useCommonList} from "~/composables/useCommonList";
+import {createColumnHelper} from "@tanstack/vue-table";
+import {h, ref} from "vue";
+import {useNuxtApp} from "#app";
+import {useFormData} from "~/composables/useFormData";
+import {useFormValidation} from "~/composables/useFormValidation";
+import Card from "~/components/molecules/Card.vue";
+import CommonModal from "~/components/atoms/modal/CommonModal.vue";
+
+const defaultFormCreate = {
+  course_class_id: 0,
+  course_class_code: '',
+  course_id: null,
+  classroom_id: null,
+  teacher_id: null,
+  weekdays: '',
+  semester: '',
+  slot: '',
+  lesson_start: '',
+  lesson_end: '',
+  start_date: '',
+  end_date: '',
+};
+
+const params = reactive({
+  course_class_code: '',
+  course_id: '',
+  classroom_id: '',
+  teacher_id: ''
+});
+
+const visibleDeleteModal = ref(false);
+const visibleCreateModal = ref(false);
+
+const { formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
+const isSingleDelete = ref<boolean>(false);
+const {handleInvalidSubmit} = useFormValidation();
+
+const {
+  dataList,
+  totalRecords,
+  currentPage,
+  perPage,
+  selectedIds,
+  handleSelectAll,
+  handleSelectMultiple,
+  fetchData
+} = useCommonList("/admin/course-classes", params);
+
+const handleDelete = async () => {
+  visibleDeleteModal.value = false;
+  const ids = ref([]);
+  if (isSingleDelete.value) {
+    ids.value.push([...selectedIds.value].at(-1));
+    selectedIds.value.delete(ids.value);
+    isSingleDelete.value = false;
+  } else {
+    ids.value = [...selectedIds.value];
+  }
+  try {
+    const res = await apiClient.delete('/admin/course-classes/bulk-delete', {
+      body: { ids: ids.value }
+    });
+    if (res.status) {
+      useNuxtApp().$toast.success(res.message);
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+    fetchData();
+  }
+};
+
+const deleteMessage = computed(() => {
+  const count = selectedIds.value.size;
+  if (isSingleDelete.value) return `Bạn có chắc chắn muốn xóa học phần với ID ${[...selectedIds.value].at(-1)} không?`;
+  return count === 1
+      ? `Bạn có chắc chắn muốn xóa học phần với ID ${[...selectedIds.value][0]} không?`
+      : `Bạn có chắc chắn muốn xóa ${count} học phần này không?`;
+});
+
+const handleCloseFormCreate = () => {
+  if (isFormDirty.value) {
+    const confirmClose = window.confirm("Dữ liệu đã thay đổi. Bạn có chắc chắn muốn đóng?");
+    if (!confirmClose) return;
+  }
+  visibleCreateModal.value = false;
+};
+
+const handleCloseFormDelete = () => {
+  if (isSingleDelete.value) {
+    selectedIds.value.delete([...selectedIds.value].at(-1));
+    isSingleDelete.value = false;
+  }
+  visibleDeleteModal.value = false;
+};
+
+const showFormDelete = () => {
+  if (selectedIds.value.size === 0) {
+    useNuxtApp().$toast.warning("Chưa có bản ghi nào được chọn");
+    return;
+  }
+  visibleDeleteModal.value = true;
+};
+
+const showFormUpdate = (data: any) => {
+  Object.assign(
+      formData,
+      Object.fromEntries(
+          Object.keys(defaultFormCreate).map((key) => [key, data[key] ?? defaultFormCreate[key]])
+      )
+  );
+  formData.weekdays = JSON.parse(formData.weekdays);
+  visibleCreateModal.value = true;
+};
+
+const showFormCreate = () => {
+  resetForm();
+  visibleCreateModal.value = true;
+};
+
+const handleCreate = async () => {
+  if (formData) {
+    try {
+      const response = await apiClient.post(`/admin/course-classes`, {...formData});
+      useNuxtApp().$toast.success(response.message);
+      await fetchData();
+      resetForm();
+      visibleCreateModal.value = false;
+    } catch (e) {
+      console.error("Error creating course classes:", e);
+    }
+  }
+};
+
+const handleUpdate = async () => {
+  if (formData) {
+    try {
+      const response = await apiClient.put(`/admin/course-classes/${formData.course_class_id}`, {...formData});
+      useNuxtApp().$toast.success(response.message);
+      await fetchData();
+      resetForm();
+      visibleCreateModal.value = false;
+    } catch (e) {
+      console.error("Error updating course classes:", e);
+    }
+  }
+};
+
+const weekdaysMap = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+
+const weekdaysOptions = [
+  { label: "Thứ 2", value: 0 },
+  { label: "Thứ 3", value: 1 },
+  { label: "Thứ 4", value: 2 },
+  { label: "Thứ 5", value: 3 },
+  { label: "Thứ 6", value: 4 },
+  { label: "Thứ 7", value: 5 },
+  { label: "Chủ nhật", value: 6 },
+];
+const formatWeekdays = (weekdays: string) => {
+  return weekdays.match(/\d+/g)?.map(day => weekdaysMap[parseInt(day)]).join(', ') || '';
+};
+
+const courses = ref<Options[]>([]);
+const courseMap = ref<Map<number, string>>(new Map());
+
+const classrooms = ref<Options[]>([]);
+const classroomMap = ref<Map<number, string>>(new Map());
+
+const teachers = ref<Options[]>([]);
+const teacherMap = ref<Map<number, string>>(new Map());
+const fetchCourseActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/courses/active`);
+    if (response && response.status) {
+      const tempCourses: Options[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((course: any) => {
+        const newCourse = { label: course.course_name, value: course.course_id };
+        tempCourses.push(newCourse);
+        tempMap.set(newCourse.value, newCourse.label);
+      });
+
+      courses.value = tempCourses;
+      courseMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching courses active:", e);
+  }
+};
+
+const fetchClassroomActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/classrooms/active`);
+    if (response && response.status) {
+      const tempClassrooms: Options[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((classroom: any) => {
+        const newClassroom = { label: classroom.room_name, value: classroom.classroom_id };
+        tempClassrooms.push(newClassroom);
+        tempMap.set(newClassroom.value, newClassroom.label);
+      });
+
+      classrooms.value = tempClassrooms;
+      classroomMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching classrooms active:", e);
+  }
+};
+
+const fetchTeacherActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/teachers/active`);
+    if (response && response.status) {
+      const tempTeachers: Options[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((teacher: any) => {
+        const newTeacher = { label: teacher.user.name, value: teacher.teacher_id };
+        tempTeachers.push(newTeacher);
+        tempMap.set(newTeacher.value, newTeacher.label);
+      });
+
+      teachers.value = tempTeachers;
+      teacherMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching teachers active:", e);
+  }
+};
+
+onMounted(() => {
+  fetchCourseActive();
+  fetchClassroomActive();
+  fetchTeacherActive();
+  console.log(teachers, teacherMap);
+})
+
+
+const columnHelper = createColumnHelper();
+const columns = [
+  columnHelper.display({
+    header: 'STT',
+    cell: ({row}) => {
+      const index = (currentPage.value - 1) * perPage.value + row.index + 1;
+      return h("div", { class: "d-flex justify-center items-center" }, [
+        h("span", index),
+      ]);
+    },
+  }),
+  columnHelper.display({
+    id: "select-all",
+    header: () => {
+      return h("div", { class: "flex justify-center items-center" }, [
+        h("input", {
+          type: "checkbox",
+          checked: selectedIds.value.size === dataList.value.length,
+          class: "checkbox form-check-input pr-4",
+          onChange: (e) => handleSelectAll(e.target.checked, 'id'),
+        }),
+      ]);
+    },
+    cell: ({ row }) => {
+      const id = row.original?.course_class_id;
+      return h("div", { class: "flex justify-center items-center" }, [
+        h("input", {
+          type: "checkbox",
+          value: id,
+          checked: selectedIds.value.has(id),
+          class: "checkbox form-check-input pr-4",
+          onChange: () => handleSelectMultiple(id),
+        }),
+      ]);
+    },
+  }),
+  columnHelper.accessor('course_class_code', {
+    header: 'Mã học phần',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('course_id', {
+    header: 'Môn học',
+    cell: info => courseMap.value.get(info.getValue()),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('classroom_id', {
+    header: 'Phòng học',
+    cell: info => classroomMap.value.get(info.getValue()),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('teacher_id', {
+    header: 'Giảng viên',
+    cell: info => teacherMap.value.get(info.getValue()),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('weekdays', {
+    header: 'Ngày học',
+    cell: ({ row }) => formatWeekdays(row.original?.weekdays || ''),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('lesson_start', {
+    header: 'Tiết học',
+    cell: ({ row }) => `${row.original.lesson_start} -> ${row.original.lesson_end}`,
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('slot', {
+    header: 'Số lượng sinh viên',
+    cell: info => info.getValue(),
+    meta: { headerClassName: '', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('start_date', {
+    header: 'Ngày bắt đầu',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('end_date', {
+    header: 'Ngày kết thúc',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.display({
+    header: 'Hành động',
+    cell: ({row}) => {
+      return h(
+          'div',
+          { class: 'menu-link flex gap-2 justify-center' },
+          [
+            h('span', {
+              class: 'text-center',
+              onClick: () => showFormUpdate(row.original),
+            }, [
+              h('i', { class: 'fa-solid fa-pen-to-square text-lg text-blue-600' })
+            ]),
+            h('span', {
+              class: 'menu-icon',
+              onClick: () => {
+                visibleDeleteModal.value = true;
+                isSingleDelete.value = true;
+                selectedIds.value.add(row.original?.course_class_id);
+              },
+            }, [
+              h('i', { class: 'fa-solid fa-trash text-lg text-danger' })
+            ])
+          ]
+      );
+    },
+  }),
+];
+</script>
+
+<template>
+  <div class="grid gap-5 lg:gap-7.5">
+    <Card title="Danh sách học phần" :isAction="true">
+      <template #button>
+        <MenuButtonAction :on-delete="showFormDelete"
+                          :number="selectedIds.size"
+                          :on-create="showFormCreate"/>
+      </template>
+      <template #action>
+        <div class="flex items-center justify-center gap-2">
+          <InputField
+              id="courseClassCode"
+              name="courseClassCode"
+              label="Mã học phần"
+              placeholder="Tìm theo mã học phần"
+              v-model="params.course_class_code"
+              labelPosition="border"
+              labelClass="hidden"
+              inputClass="w-[200px]"
+          />
+        </div>
+      </template>
+      <TableDefault :columns="columns" :data="dataList" />
+      <PaginationControls
+          :totalRecords="totalRecords"
+          :perPage="perPage"
+          :currentPage="currentPage"
+          @update:perPage="perPage = $event"
+          @update:currentPage="currentPage = $event"
+      />
+    </Card>
+  </div>
+  <CommonModal
+      :visible="visibleCreateModal"
+      title="Tạo mới"
+      :body="deleteMessage"
+      width="800px"
+      @close="handleCloseFormCreate"
+      @clickOutside="handleCloseFormCreate"
+      @confirm="formData.course_class_id ? handleUpdate() : handleCreate()"
+      :isFormDirty="isFormDirty">
+    <template #header>
+      <h2 class="text-xl font-bold">{{formData.course_class_id ? 'Cập nhật' : 'Thêm mới'}} học phần</h2>
+    </template>
+    <VeeForm @submit="formData.course_class_id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
+      <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
+      <InputField
+          id="classroom"
+          name="classroom"
+          label="Phòng học"
+          v-model="formData.classroom_id"
+          :dataOptions="classrooms"
+          inputType="select2"
+          :required="true"
+          rules="required"
+          inputClass="w-full"
+          selectPlaceholder="Chọn lớp học"
+      />
+      <InputField
+          id="course"
+          name="course"
+          label="Môn học"
+          v-model="formData.course_id"
+          :dataOptions="courses"
+          inputType="select2"
+          :required="true"
+          rules="required"
+          inputClass="w-full"
+          selectPlaceholder="Chọn môn học"
+      />
+      <InputField
+          id="teacher"
+          name="teacher"
+          label="Giảng viên"
+          v-model="formData.teacher_id"
+          :dataOptions="teachers"
+          inputType="select2"
+          :required="true"
+          rules="required"
+          inputClass="w-full"
+          selectPlaceholder="Chọn giảng viên"
+      />
+
+      <TagSelector
+          id="weekdays"
+          name="weekdays"
+          label="Ngày học"
+          v-model="formData.weekdays"
+          :data-options="weekdaysOptions"
+          inputType="select2"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          rules="required"
+          placeholder="Chọn ngày học"
+          :multiple="true"
+      />
+
+      <InputField
+          id="semester"
+          inputType="number"
+          name="semester"
+          label="Học kỳ"
+          v-model="formData.semester"
+          rules="required|numeric"
+          :required="true"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          height="400"
+      />
+
+      <InputField
+          id="lessonStart"
+          inputType="number"
+          name="lessonStart"
+          label="Tiết học bắt đầu"
+          v-model="formData.lesson_start"
+          rules="required|numeric"
+          :required="true"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          height="400"
+      />
+
+      <InputField
+          id="slot"
+          name="slot"
+          label="Số lượng sinh viên"
+          placeholder="Nhập số lượng sinh viên"
+          v-model="formData.slot"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|numeric|min:1|max:500"
+      />
+
+      <InputField
+          id="lessonEnd"
+          inputType="number"
+          name="lessonEnd"
+          label="Tiết học kết thúc"
+          v-model="formData.lesson_end"
+          rules="required|numeric"
+          :required="true"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          height="400"
+      />
+      <InputField
+          id="start_date"
+          name="start_date"
+          label="Ngày bắt đầu"
+          v-model="formData.start_date"
+          inputType="date"
+          :required="true"
+          rules="required"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+      />
+      <InputField
+          id="end_date"
+          name="end_date"
+          label="Ngày kết thúc"
+          :required="true"
+          rules="required"
+          v-model="formData.end_date"
+          inputType="date"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+      />
+
+      <!-- Add other input fields for course_id, classroom_id, teacher_id, weekdays, etc. -->
+    </VeeForm>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>
+      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.course_class_id ? 'Cập nhật' : 'Thêm mới'}}</button>
+    </template>
+  </CommonModal>
+  <CommonModal
+      :visible="visibleDeleteModal"
+      title="Xác nhận thao tác"
+      :body="deleteMessage"
+      @close="handleCloseFormDelete"
+      @clickOutside="handleCloseFormDelete">
+    <template #header>
+      <h2 class="text-xl font-bold text-red-500">⚠️ Xác nhận xóa</h2>
+    </template>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseFormDelete">Hủy</button>
+      <button class="btn btn-danger" @click="handleDelete">Xóa</button>
+    </template>
+  </CommonModal>
+</template>
+<style scoped lang="scss">
+
+</style>

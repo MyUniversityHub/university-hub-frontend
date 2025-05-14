@@ -21,7 +21,7 @@
           v-if="inputType === 'normal'"
           :id="id"
           :name="name"
-          :class="['input', { 'is-invalid': errors[name] }]"
+          :class="['input', { 'is-invalid': errors[name], 'cursor-not-allowed': disabled  }]"
           :type="type"
           :maxlength="maxlength"
           :rules="rules"
@@ -85,7 +85,7 @@
           :placeholder="selectPlaceholder"
           v-model="model"
           :value="value"
-          class="common-input w-full px-3 py-2  "
+          class="common-input w-full px-3 py-2 leading-normal"
           @blur="emit('blur', $event)"
       >
         <option value="" disabled selected>{{ placeholder }}</option>
@@ -218,8 +218,8 @@
           <DatePicker
               v-bind="field"
               v-model:value="model"
-              valueType="DD/MM/YYYY"
-              :format=formatDate
+              valueType="format"
+              :format="'YYYY-MM-DD'"
               class=""
               style="width: 100%;"
               :placeholder="placeholder"
