@@ -101,7 +101,7 @@ const fetchDepartmentsActive = async () => {
       const tempMap = new Map<number, string>();
 
       response.data.forEach((department: any) => {
-        const newDepartment = { label: department.name, value: department.id };
+        const newDepartment = { label: department.department_name, value: department.department_id };
         tempDepartments.push(newDepartment);
         tempMap.set(newDepartment.value, newDepartment.label);
       });
@@ -402,17 +402,6 @@ const columns = [
           inputClass="flex-1"
           :required="true"
           rules="required|only_letters|max:50"
-      />
-      <InputField
-          id="userName"
-          name="userName"
-          label="Tên tài khoản"
-          placeholder="Nhập tên tài khoản"
-          v-model="formData.user_name"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|latin_numbers_only|max:50"
       />
       <InputField
           id="email"

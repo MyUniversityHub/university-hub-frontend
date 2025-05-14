@@ -103,4 +103,12 @@ export default defineNuxtPlugin((nuxtApp) => {
         }
         return true;
     });
+
+    defineRule('valid_department_name', (value) => {
+        if (!/^[\p{L}\s-]+$/u.test(value)) {
+            return 'Tên không hợp lệ, chỉ cho phép chữ cái và dấu gạch ngang!';
+        }
+        return true;
+    });
+
 });

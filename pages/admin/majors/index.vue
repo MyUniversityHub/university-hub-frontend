@@ -9,16 +9,16 @@ import {useFormValidation} from "~/composables/useFormValidation";
 import Card from "~/components/molecules/Card.vue";
 import CommonModal from "~/components/atoms/modal/CommonModal.vue";
 const defaultFormCreate = {
-  id: 0,
-  code: '',
+  major_id: 0,
+  major_code: '',
   department_id: '',
-  name: '',
+  major_name: '',
   active: 1,
 };
 
 const params = reactive({
-  code: '',
-  name: '',
+  major_code: '',
+  major_name: '',
   department: '',
 });
 
@@ -81,7 +81,7 @@ const fetchDepartmentsActive = async () => {
       const tempMap = new Map<number, string>();
 
       response.data.forEach((department: any) => {
-        const newDepartment = { label: department.name, value: department.id };
+        const newDepartment = { label: department.department_name, value: department.department_id };
         tempDepartments.push(newDepartment);
         tempMap.set(newDepartment.value, newDepartment.label);
       });
@@ -165,7 +165,7 @@ const handleUpdate = async () => {
   if (formData) {
     formData.department_id = Number(formData.department_id);
     try {
-      const response = await apiClient.put(`/admin/majors/${formData.id}`, {...formData});
+      const response = await apiClient.put(`/admin/majors/${formData.major_id}`, {...formData});
       useNuxtApp().$toast.success(response.message);
       await fetchData();
       resetForm()
@@ -215,7 +215,7 @@ const columns = [
       ]);
     },
     cell: ({ row }) => {
-      const id = row.original?.id;
+      const id = row.original?.major_id;
       return h("div", { class: "flex justify-center items-center" }, [
         h("input", {
           'data-tooltip': selectedIds.value.has(id) ? 'Bỏ chọn' : 'Chọn',
@@ -228,12 +228,12 @@ const columns = [
       ]);
     },
   }),
-  columnHelper.accessor('code', {
+  columnHelper.accessor('major_code', {
     header: 'Mã chuyên ngành',
     cell: info => info.getValue(),
     meta: { headerClassName: '', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
-  columnHelper.accessor('name', {
+  columnHelper.accessor('major_name', {
     header: 'Tên chuyên ngành',
     cell: info => info.getValue(),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
@@ -246,7 +246,7 @@ const columns = [
   columnHelper.accessor('status', {
     header: 'Trạng thái',
     cell: ({ row }) => {
-      const id = row.original?.id;
+      const id = row.original?.major_id;
       const active = row.original?.active;
       return h("div", { class: "flex justify-center items-center" }, [
         h("input", {
@@ -282,7 +282,7 @@ const columns = [
               onClick: () => {
                 visibleDeleteModal.value = true;
                 isSingleDelete.value = true;
-                selectedIds.value.add(row.original?.id);
+                selectedIds.value.add(row.original?.major_id);
               },
             }, [
               h('i', { class: 'fa-solid fa-trash text-lg text-danger' })
@@ -323,7 +323,7 @@ const columns = [
               name="departmentCode"
               label="Tên mã chuyên ngành"
               placeholder="Tìm theo mã chuyên ngành"
-              v-model="params.code"
+              v-model="params.major_code"
               labelPosition="border"
               labelClass="hidden"
               inputClass="w-[200px]"
@@ -333,7 +333,7 @@ const columns = [
               name="departmentName"
               label="Tên chuyên ngành"
               placeholder="Tìm theo tên chuyên ngành"
-              v-model="params.name"
+              v-model="params.major_name"
               labelPosition="border"
               labelClass="hidden"
               inputClass="w-[200px]"
@@ -357,24 +357,13 @@ const columns = [
       width="800px"
       @close="handleCloseFormCreate"
       @clickOutside="handleCloseFormCreate"
-      @confirm="formData.id ? handleUpdate() : handleCreate()"
+      @confirm="formData.major_id ? handleUpdate() : handleCreate()"
       :isFormDirty="isFormDirty">
     <template #header>
-      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} chuyên ngành</h2>
+      <h2 class="text-xl font-bold">{{formData.major_id ? 'Cập nhật' : 'Thêm mới'}} chuyên ngành</h2>
     </template>
-    <VeeForm @submit="formData.id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
+    <VeeForm @submit="formData.major_id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
       <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
-      <InputField
-          id="code"
-          name="code"
-          label="Mã chuyên ngành"
-          placeholder="Nhập mã chuyên ngành"
-          v-model="formData.code"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|max:20|latin_numbers_only"
-      />
       <InputField
           id="departmentId"
           name="departmentId"
@@ -392,16 +381,16 @@ const columns = [
           name="name"
           label="Tên chuyên ngành"
           placeholder="Nhập tên chuyên ngành"
-          v-model="formData.name"
+          v-model="formData.major_name"
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required|only_letters|max:120"
+          rules="required|valid_department_name|max:120"
       />
     </VeeForm>
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>
-      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.id ? 'Cập nhật' : 'Thêm mới'}}</button>
+      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.major_id ? 'Cập nhật' : 'Thêm mới'}}</button>
     </template>
   </CommonModal>
   <CommonModal

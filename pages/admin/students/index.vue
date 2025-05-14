@@ -16,6 +16,7 @@ const defaultFormCreate = {
   name: '',
   user_name: '',
   email: '',
+  admission_year: '',
   password: '',
   role_id: 2,
   class_id: 0,
@@ -120,7 +121,7 @@ const fetchMajorsByDepartment = async () => {
       const tempMap = new Map<number, string>();
 
       response.data.forEach((major: any) => {
-        const newMajor = { label: major.name, value: major.id };
+        const newMajor = { label: major.major_name, value: major.major_id };
         tempMajors.push(newMajor);
         tempMap.set(newMajor.value, newMajor.label);
       });
@@ -141,7 +142,7 @@ const fetchDepartmentsActive = async () => {
       const tempMap = new Map<number, string>();
 
       response.data.forEach((department: any) => {
-        const newDepartment = { label: department.name, value: department.id };
+        const newDepartment = { label: department.department_name, value: department.department_id };
         tempDepartments.push(newDepartment);
         tempMap.set(newDepartment.value, newDepartment.label);
       });
@@ -162,7 +163,7 @@ const fetchClassesByMajor = async () => {
       // const tempMap = new Map<number, string>();
 
       response.data.forEach((classes: any) => {
-        const newClass = { label: classes.name, value: classes.id };
+        const newClass = { label: classes.class_name, value: classes.class_id };
         tempClasses.push(newClass);
         // tempMap.set(newDepartment.value, newDepartment.label);
       });
@@ -219,6 +220,7 @@ const showFormUpdate = (data: any) => {
           Object.keys(defaultFormCreate).map((key) => [key, data[key] ?? defaultFormCreate[key]])
       )
   );
+  console.log(data, formData);
   visibleCreateModal.value = true;
 }
 
@@ -234,6 +236,8 @@ const showFormReset = (data: any) => {
 
 const showFormCreate = () => {
   resetForm();
+  selectedDepartment.value = 0;
+  selectedMajor.value = 0;
   visibleCreateModal.value = true;
 }
 
@@ -479,22 +483,22 @@ const columns = [
           rules="required|only_letters|max:50"
       />
       <InputField
-          id="userName"
-          name="userName"
-          label="Tên tài khoản"
-          placeholder="Nhập tên tài khoản"
-          v-model="formData.user_name"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|latin_numbers_only|max:50"
-      />
-      <InputField
           id="email"
           name="email"
           label="Email"
           placeholder="Nhập email"
           v-model="formData.email"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          :required="true"
+          rules="required|max:50"
+      />
+      <InputField
+          id="admissionYear"
+          name="admissionYear"
+          label="Năm nhập học"
+          placeholder="Nhập năm nhập học"
+          v-model="formData.admission_year"
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
@@ -510,7 +514,7 @@ const columns = [
           :required="true"
           rules="required"
           inputClass="w-full"
-          selectPlaceholder="Chọn quyền"
+          selectPlaceholder="Chọn khoa"
           @change="fetchMajorsByDepartment"
       />
       <InputField
