@@ -65,7 +65,7 @@ const onSubmitChangePassword = async () => {
     return;
   }
   const response = await apiClient.put(
-      '/admin/change-password',
+      '/change-password',
       {
         current_password: changePassword.value.current_password,
         new_password: changePassword.value.new_password,

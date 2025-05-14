@@ -9,16 +9,16 @@ import {useFormValidation} from "~/composables/useFormValidation";
 import Card from "~/components/molecules/Card.vue";
 import CommonModal from "~/components/atoms/modal/CommonModal.vue";
 const defaultFormCreate = {
-  id: 0,
-  code: '',
-  name: '',
+  department_id: 0,
+  department_code: '',
+  department_name: '',
   description: '',
   active: 1,
 };
 
 const params = reactive({
-  code: '',
-  name: ''
+  department_code: '',
+  department_name: ''
 });
 
 const visibleDeleteModal = ref(false)
@@ -128,7 +128,7 @@ const handleCreate = async () => {
 const handleUpdate = async () => {
   if (formData) {
     try {
-      const response = await apiClient.put(`/admin/departments/${formData.id}`, {...formData});
+      const response = await apiClient.put(`/admin/departments/${formData.department_id}`, {...formData});
       useNuxtApp().$toast.success(response.message);
       await fetchData();
       resetForm()
@@ -141,7 +141,7 @@ const handleUpdate = async () => {
 
 const handleUpdateStatus = async (event: Event, id: number) => {
   const checkbox = event.target as HTMLInputElement;
-  const isCheck = checkbox.checked;
+  const isCheck = checkbox.checked ? 1 : 0;
   try {
     const response = await apiClient.put(`/admin/departments/${id}/update-status`, {active: isCheck});
     useNuxtApp().$toast.success(response.message);
@@ -178,7 +178,7 @@ const columns = [
       ]);
     },
     cell: ({ row }) => {
-      const id = row.original?.id;
+      const id = row.original?.department_id;
       return h("div", { class: "flex justify-center items-center" }, [
         h("input", {
           'data-tooltip': selectedIds.value.has(id) ? 'Bỏ chọn' : 'Chọn',
@@ -191,20 +191,20 @@ const columns = [
       ]);
     },
   }),
-  columnHelper.accessor('code', {
+  columnHelper.accessor('department_code', {
     header: 'Mã khoa',
     cell: info => info.getValue(),
     meta: { headerClassName: '', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
-  columnHelper.accessor('name', {
+  columnHelper.accessor('department_name', {
     header: 'Tên khoa',
     cell: info => info.getValue(),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
-  columnHelper.accessor('status', {
+  columnHelper.accessor('active', {
     header: 'Trạng thái',
     cell: ({ row }) => {
-      const id = row.original?.id;
+      const id = row.original?.department_id;
       const active = row.original?.active;
       return h("div", { class: "flex justify-center items-center" }, [
         h("input", {
@@ -240,7 +240,7 @@ const columns = [
               onClick: () => {
                 visibleDeleteModal.value = true;
                 isSingleDelete.value = true;
-                selectedIds.value.add(row.original?.id);
+                selectedIds.value.add(row.original?.department_id);
               },
             }, [
               h('i', { class: 'fa-solid fa-trash text-lg text-danger' })
@@ -269,7 +269,7 @@ const columns = [
               name="departmentCode"
               label="Tên mã khoa"
               placeholder="Tìm theo mã khoa"
-              v-model="params.code"
+              v-model="params.department_code"
               labelPosition="border"
               labelClass="hidden"
               inputClass="w-[200px]"
@@ -279,7 +279,7 @@ const columns = [
               name="departmentName"
               label="Tên khoa"
               placeholder="Tìm theo tên khoa"
-              v-model="params.name"
+              v-model="params.department_name"
               labelPosition="border"
               labelClass="hidden"
               inputClass="w-[200px]"
@@ -303,34 +303,23 @@ const columns = [
       width="800px"
       @close="handleCloseFormCreate"
       @clickOutside="handleCloseFormCreate"
-      @confirm="formData.id ? handleUpdate() : handleCreate()"
+      @confirm="formData.department_id ? handleUpdate() : handleCreate()"
       :isFormDirty="isFormDirty">
     <template #header>
-      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} khoa</h2>
+      <h2 class="text-xl font-bold">{{formData.department_id ? 'Cập nhật' : 'Thêm mới'}} khoa</h2>
     </template>
-    <VeeForm @submit="formData.id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
+    <VeeForm @submit="formData.department_id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
       <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
-      <InputField
-          id="code"
-          name="code"
-          label="Mã khoa"
-          placeholder="Nhập mã khoa"
-          v-model="formData.code"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|max:20|latin_numbers_only"
-      />
       <InputField
           id="name"
           name="name"
           label="Tên khoa"
           placeholder="Nhập tên khoa"
-          v-model="formData.name"
+          v-model="formData.department_name"
           labelClass="w-[200px]"
           inputClass="flex-1"
           :required="true"
-          rules="required|only_letters|max:120"
+          rules="required|valid_department_name|max:120"
       />
       <InputField
           id="description"
@@ -347,7 +336,7 @@ const columns = [
     </VeeForm>
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>
-      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.id ? 'Cập nhật' : 'Thêm mới'}}</button>
+      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.department_id ? 'Cập nhật' : 'Thêm mới'}}</button>
     </template>
   </CommonModal>
   <CommonModal
