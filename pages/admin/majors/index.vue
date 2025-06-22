@@ -27,11 +27,28 @@ type Options = {
   label: string
 };
 
+const courseCreate = ref({
+  major_id: '',
+  course_id: '',
+  semester: '',
+});
+
 const departments = ref<Options[]>([]);
 const departmentMap = ref<Map<number, string>>(new Map());
 
 const visibleDeleteModal = ref(false)
 const visibleCreateModal = ref(false)
+const visibleCollectionModal = ref(false)
+const visibleImportModal = ref(false);
+const selectedFile = ref<File | null>(null);
+
+const selectedMajorId = ref<number>(0);
+
+const coursesByMajorId = ref<any[]>([]);
+const selectedCourse = ref<{
+  course_id: number,
+  major_id: number
+}>(null);
 
 const { formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
 const isSingleDelete = ref<boolean>(false);
@@ -73,6 +90,19 @@ const handleDelete = async () => {
   }
 };
 
+const handleCreateCourse = async () => {
+  courseCreate.value.major_id = selectedMajorId.value;
+  try {
+    const response = await apiClient.post(`/admin/curriculum-programs`, {...courseCreate.value});
+    useNuxtApp().$toast.success(response.message);
+    courseCreate.value.course_id = '';
+    courseCreate.value.semester = '';
+    await fetchCoursesByMajorId();
+  } catch (e) {
+    console.error("Error creating course:", e);
+  }
+};
+
 const fetchDepartmentsActive = async () => {
   try {
     const response = await apiClient.get(`/admin/departments/active`);
@@ -94,8 +124,30 @@ const fetchDepartmentsActive = async () => {
   }
 };
 
+const coursesActive = ref<any[]>([]);
+
+const fetchCourseActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/courses/active`);
+    if (response && response.status) {
+      coursesActive.value = response.data;
+    }
+  } catch (e) {
+    console.error("Error fetching courses active:", e);
+  }
+};
+
+const courseOptions = computed(() =>
+    coursesActive.value.map((course: any) => ({
+      label: course.course_name,
+      value: course.course_id,
+    }))
+);
+
+
 onMounted(() => {
   fetchDepartmentsActive();
+  fetchCourseActive();
 })
 
 
@@ -146,6 +198,22 @@ const showFormCreate = () => {
   visibleCreateModal.value = true;
 }
 
+const showFormCollection = async () => {
+  await fetchCoursesByMajorId();
+  visibleCollectionModal.value = true;
+}
+
+const fetchCoursesByMajorId = async () => {
+  try {
+    const response = await apiClient.get(`/admin/curriculum-programs/major/${selectedMajorId.value}`);
+    if(response && response.status) {
+      coursesByMajorId.value = response.data;
+    }
+  } catch (e) {
+    console.error("Error fetching courses by major ID:", e);
+  }
+};
+
 const handleCreate = async () => {
   if (formData) {
     formData.department_id = Number(formData.department_id);
@@ -190,6 +258,70 @@ const handleUpdateStatus = async (event: Event, id: number) => {
   }
 };
 
+const handleSingleDelete = async (data: any) => {
+  try {
+    const response = await apiClient.delete(`/admin/curriculum-programs`, {
+      body: {
+        course_id: data.course_id,
+        major_id: data.major_id,
+      }
+    });
+    useNuxtApp().$toast.success(response.message);
+    await fetchCoursesByMajorId();
+  } catch (e) {
+    console.error("Error updating active majors:", e);
+  }
+};
+
+const confirmImport = () => {
+  selectedFile.value = "";
+  visibleImportModal.value = true;
+};
+
+const handleCloseImportModal = () => {
+  visibleImportModal.value = false;
+  selectedFile.value = null;
+};
+
+const handleImport = async () => {
+  if (!selectedFile.value) {
+    useNuxtApp().$toast.error("Vui lòng chọn tệp trước khi import!");
+    return;
+  }
+  const formData = new FormData();
+  formData.append("file", selectedFile.value);
+
+  try {
+    await apiClient.post(`/admin/majors/import-excel`, formData);
+    useNuxtApp().$toast.success("Import chuyên ngành thành công!");
+    await fetchData();
+    if (dataList.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+    selectedFile.value = null;
+    visibleImportModal.value = false;
+  } catch (e) {
+    console.error("Error importing majors:", e);
+  }
+};
+
+const handleExport = async () => {
+  try {
+    const response = await apiClient.get(`/admin/majors/export-excel`);
+    const url = window.URL.createObjectURL(response);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = 'majors.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    useNuxtApp().$toast.success("Export chuyên ngành thành công");
+  } catch (e) {
+    console.error("Error exporting majors:", e);
+  }
+};
+
 const columnHelper = createColumnHelper();
 const columns = [
   columnHelper.display({
@@ -210,7 +342,7 @@ const columns = [
           type: "checkbox",
           checked: selectedIds.value.size === dataList.value.length,
           class: "checkbox form-check-input pr-4",
-          onChange: (e) => handleSelectAll(e.target.checked, 'id'),
+          onChange: (e) => handleSelectAll(e.target.checked, 'major_id'),
         }),
       ]);
     },
@@ -242,6 +374,20 @@ const columns = [
     header: 'Tên khoa',
     cell: info => departmentMap.value.get(info.getValue()),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.display({
+    header: 'Chương trình',
+    cell: ({row}) => {
+      return h("div", { class: "flex justify-center items-center cursor-pointer" }, [
+        h("i", {
+          class: "fa fa-bars",
+          onClick: () => {
+            selectedMajorId.value = row.original?.major_id;
+            showFormCollection();
+          }
+        })
+      ]);
+    },
   }),
   columnHelper.accessor('status', {
     header: 'Trạng thái',
@@ -294,6 +440,91 @@ const columns = [
   })
 ];
 
+const courseColumns = [
+  columnHelper.display({
+    header: 'STT',
+    cell: ({row}) => {
+      const index = row.index + 1;
+      return h("div", { class: "d-flex justify-center items-center" }, [
+        h("span", index),
+      ]);
+    },
+  }),
+  // columnHelper.display({
+  //   id: "select-all",
+  //   header: () => {
+  //     return h("div", { class: "flex justify-center items-center" }, [
+  //       h("input", {
+  //         'data-tooltip': selectedIds.value.size === dataList.value.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả',
+  //         type: "checkbox",
+  //         checked: selectedIds.value.size === dataList.value.length,
+  //         class: "checkbox form-check-input pr-4",
+  //         onChange: (e) => handleSelectAll(e.target.checked, 'id'),
+  //       }),
+  //     ]);
+  //   },
+  //   cell: ({ row }) => {
+  //     const id = row.original?.major_id;
+  //     return h("div", { class: "flex justify-center items-center" }, [
+  //       h("input", {
+  //         'data-tooltip': selectedIds.value.has(id) ? 'Bỏ chọn' : 'Chọn',
+  //         type: "checkbox",
+  //         value: id,
+  //         checked: selectedIds.value.has(id),
+  //         class: "checkbox form-check-input pr-4",
+  //         onChange: () => handleSelectMultiple(id),
+  //       }),
+  //     ]);
+  //   },
+  // }),
+  columnHelper.accessor('course_code', {
+    header: 'Mã môn',
+    cell: info => info.getValue(),
+    meta: { headerClassName: '', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('course_name', {
+    header: 'Tên môn',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('semester', {
+    header: 'Học kỳ',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.accessor('prerequisite_code', {
+    header: 'Mã môn tiên quyết',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
+  columnHelper.display({
+    header: 'Hành động',
+    cell: ({row}) => {
+      return h(
+          'div',
+          {
+            class: 'menu-link flex gap-2 justify-center',
+          },
+          [
+            h('span', {
+              class: 'menu-icon',
+              onClick: () => {
+                selectedCourse.value = {
+                  course_id: row.original?.course_id,
+                  major_id: selectedMajorId.value
+                };
+                handleSingleDelete(selectedCourse.value);
+              },
+            }, [
+              h('i', { class: 'fa fa-times text-lg text-danger' })
+            ])
+          ]
+      );
+    },
+    meta: { headerClassName: 'whitespace-nowrap text-center'}
+  })
+];
+
 </script>
 
 <template>
@@ -302,7 +533,9 @@ const columns = [
       <template #button>
         <MenuButtonAction :on-delete="showFormDelete"
                           :number="selectedIds.size"
-                          :on-create="showFormCreate"/>
+                          :on-create="showFormCreate"
+                          :on-import="confirmImport"
+                          :on-export="handleExport"/>
       </template>
       <template #action>
         <div class="flex items-center justify-center gap-2">
@@ -405,6 +638,70 @@ const columns = [
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormDelete">Hủy</button>
       <button class="btn btn-danger" @click="handleDelete">Xóa</button>
+    </template>
+  </CommonModal>
+  <CommonModal
+      :visible="visibleCollectionModal"
+      title="Danh sách môn học"
+      width="1200px"
+      @close="visibleCollectionModal = false"
+      @clickOutside="visibleCollectionModal = false">
+    <template #header>
+      <h2 class="text-xl font-bold">Danh sách môn học</h2>
+    </template>
+    <div class="flex flex-col gap-4 p-4 bg-gray-50 rounded-lg shadow">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+            id="major"
+            name="major"
+            label="Chuyên ngành"
+            v-model="courseCreate.course_id"
+            :dataOptions="courseOptions"
+            inputType="select2"
+            :required="true"
+            rules="required"
+            inputClass="w-full"
+            selectPlaceholder="Chọn môn học"
+        />
+        <InputField
+            id="semester"
+            inputType="number"
+            name="semester"
+            label="Học kỳ"
+            v-model="courseCreate.semester"
+            rules="required|numeric"
+            :required="true"
+            labelClass="w-[200px]"
+            inputClass="flex-1"
+        />
+      </div>
+      <div class="flex justify-end">
+        <button
+            type="button"
+            class="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow transition"
+            @click="handleCreateCourse"
+        >
+          Thêm
+        </button>
+      </div>
+    </div>
+    <TableDefault :columns="courseColumns" :data="coursesByMajorId" />
+    <template #footer>
+      <div></div>
+    </template>
+  </CommonModal>
+  <CommonModal
+      className="max-w-[600px] top-[15%]" title="Import chuyên ngành" :isAction="true"
+      :visible="visibleImportModal"
+      @close="handleCloseImportModal"
+      @clickOutside="handleCloseImportModal"
+  >
+    <VeeForm id="import_major_confirm" @submit="handleImport">
+      <FileUploader v-model="selectedFile" accept=".xls,.xlsx" description="Chọn file Excel hoặc kéo thả vào đây (định dạng .xls, .xlsx, tối đa 5MB)" />
+    </VeeForm>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseImportModal">Hủy</button>
+      <button class="btn btn-primary" type="submit" form="import_major_confirm">Xác nhận</button>
     </template>
   </CommonModal>
 </template>

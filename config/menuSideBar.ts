@@ -11,27 +11,27 @@ const allMenuItems: Record<string, MenuItem[]> = {
     ADMIN: [
         {
             title: 'Trang chủ',
-            icon: 'fas fa-home',
+            icon: 'fas fa-gauge',
             path: '/admin/dashboard',
         },
         {
             title: 'Quản lý khoa',
-            icon: 'fas fa-building',
+            icon: 'fas fa-university',
             path: '/admin/departments',
         },
         {
             title: 'Quản lý chuyên ngành',
-            icon: 'fas fa-book',
+            icon: 'fas fa-layer-group',
             path: '/admin/majors',
         },
         {
             title: 'Quản lý lớp học',
-            icon: 'fas fa-chalkboard',
+            icon: 'fas fa-users-rectangle',
             path: '/admin/classes',
         },
         {
             title: 'Quản lý người dùng',
-            icon: 'fas fa-users',
+            icon: 'fas fa-user-gear',
             path: '/admin/users',
             children: [
                 {
@@ -50,42 +50,68 @@ const allMenuItems: Record<string, MenuItem[]> = {
         },
         {
             title: 'Quản lý môn học',
-            icon: 'fas fa-book',
+            icon: 'fas fa-book-atlas',
             path: '/admin/courses',
         },
         {
+            title: 'Mở lớp học phần',
+            icon: 'fas fa-folder-plus',
+            path: '/admin/curriculum-programs',
+        },
+        {
             title: 'Quản lý phòng học',
-            icon: 'fas fa-door-open',
+            icon: 'fas fa-school',
             path: '/admin/classrooms',
         },
         {
             title: 'Quản lý lớp học phần',
-            icon: 'fas fa-door-open',
+            icon: 'fas fa-clipboard-list',
             path: '/admin/course-classes',
         }
     ],
     STUDENT: [
         {
             title: 'Trang chủ',
-            icon: 'fas fa-home',
+            icon: 'fas fa-tachometer-alt', // Dashboard icon
             path: '/student/dashboard',
         },
         {
-            title: 'Lớp học của tôi',
-            icon: 'fas fa-chalkboard-teacher',
-            path: '/student/my-classes',
+            title: 'Thời khóa biểu',
+            icon: 'fas fa-calendar-days', // Modern calendar icon
+            path: '/student/class-schedule',
         },
         {
-            title: 'Bài tập',
-            icon: 'fas fa-tasks',
-            path: '/student/assignments',
+            title: 'Đăng ký học phần',
+            icon: 'fas fa-clipboard-check', // Registration icon
+            path: '/student/register-course',
         },
         {
             title: 'Kết quả học tập',
-            icon: 'fas fa-chart-line',
+            icon: 'fas fa-award', // Result/award icon
             path: '/student/results',
         },
+        {
+            title: 'Chương trình đào tạo',
+            icon: 'fas fa-sitemap', // Curriculum/program icon
+            path: '/student/curriculum-programs',
+        },
+        {
+            title: 'Thanh toán công nợ',
+            icon: 'fas fa-money-check-dollar', // Payment icon
+            path: '/student/registration-fee-detail',
+        },
+        {
+            title: 'Nạp tiền',
+            icon: 'fas fa-piggy-bank', // Deposit icon
+            path: '/student/payment',
+        },
+        {
+            title: 'Lịch sử giao dịch',
+            icon: 'fas fa-clock-rotate-left', // Transaction history icon
+            path: '/student/transaction-histories',
+        },
     ],
+
     TEACHER: [
         {
             title: 'Trang chủ',
@@ -98,15 +124,10 @@ const allMenuItems: Record<string, MenuItem[]> = {
             path: '/teacher/my-classes',
         },
         {
-            title: 'Quản lý bài tập',
+            title: 'Quản lý lịch dạy',
             icon: 'fas fa-tasks',
-            path: '/teacher/assignments',
-        },
-        {
-            title: 'Kết quả học tập',
-            icon: 'fas fa-chart-line',
-            path: '/teacher/results',
-        },
+            path: '/teacher/teaching-schedule',
+        }
     ],
 };
 
@@ -114,6 +135,7 @@ export const getFilteredMenuItems = (): MenuItem[] => {
 
     const userStore = useUserStore();
     const userRole = userStore.roleName;
+    console.log('userRole', userRole);
     const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
         return items
             .map(item => {
@@ -126,5 +148,5 @@ export const getFilteredMenuItems = (): MenuItem[] => {
             })
             .filter(Boolean) as MenuItem[]; // Loại bỏ các giá trị null
     };
-    return filterMenuItems(allMenuItems[userRole]);
+    return filterMenuItems(allMenuItems[userRole] || []);
 };

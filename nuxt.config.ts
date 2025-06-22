@@ -15,10 +15,19 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
+  devServer: {
+    headers: {
+      'Cache-Control': 'no-store' // Tắt cache hoàn toàn (chỉ dùng khi dev)
+    },
+    host: '0.0.0.0',
+    // 👇 Cho phép domain từ ngrok
+    allowedHosts: ['*'] // Hoặc ghi cụ thể: ['6005-183-81-11-45.ngrok-free.app']
+  },
   plugins: [
     '~/plugins/vee-validate',
     '~/plugins/select2-client',
-    '~/plugins/tooltip-client'
+    '~/plugins/tooltip-client',
+    '~/plugins/chart.js'
   ],
   runtimeConfig: {
     public: {

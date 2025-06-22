@@ -2,7 +2,7 @@
   <div :class="className">
     <div v-for="(box, index) in boxes" :key="box.id" class="border p-4 rounded-lg shadow-md space-y-2 relative">
       <div class="flex justify-between items-center">
-        <span class="font-semibold">{{titleBox}} #{{ index + 1 }}</span>
+        <span class="font-semibold">{{ titleBox }} #{{ index + 1 }}</span>
         <div
             class="rounded-md h-10 flex items-center px-2.5 gap-1 cursor-pointer border border-solid border-gray-300 text-danger"
             @click="removeBox(box.id)"
@@ -25,28 +25,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from "vue";
+import { ref, defineProps, defineEmits, watch, toRef } from "vue";
 
 interface Box {
   id: number;
-  values: Record<string, string>;
+  values: Record<string, any>;
 }
 
-const props = defineProps<{
-  modelValue: Array<{ id: number; values: Record<string, any>; districtOptions?: Array<any> }>;
-  fields?: string[],
-  className?: string,
+const props = defineProps({
+  modelValue: {
+    type: Array as () => Array<{ id: number; values: Record<string, any> }>,
+    required: true
+  },
+  fields: {
+    type: Array as () => string[],
+    default: () => []
+  },
+  className: {
+    type: String,
+    default: ""
+  },
   titleBox: {
-    type: string,
+    type: String,
     default: "Box"
+  },
+  initialValues: {
+    type: Object as () => Record<string, any>,
+    default: () => ({})
   }
-}>();
+});
+
 const emit = defineEmits(["update:modelValue"]);
 
-const initialFields = props.fields ?? []; // Nếu fields không tồn tại, dùng mảng rỗng
-const boxes = ref<Box[]>([
-  { id: Date.now(), values: Object.fromEntries(initialFields.map((key) => [key, ""])) }
-]);
+// Sử dụng toRef để giữ tính reactive của initialValues
+const initialValuesRef = toRef(props, 'initialValues');
+const initialFields = props.fields ?? [];
+const boxes = ref<Box[]>([]);
 
 // Theo dõi modelValue (boxData) để fill vào các input
 watch(
@@ -55,9 +69,19 @@ watch(
       if (!Array.isArray(newValue)) return;
       boxes.value = newValue;
     },
-    { immediate: true }
+    { immediate: true, deep: true }
 );
 
+watch(initialValuesRef, (newValues) => {
+  boxes.value.forEach(box => {
+    Object.keys(newValues).forEach(key => {
+      if (box.values[key] === '' || box.values[key] === undefined) {
+        box.values[key] = newValues[key];
+        updateModelValue();
+      }
+    });
+  });
+}, { deep: true });
 
 const updateBoxValue = (boxId: number, field: string, value: any) => {
   const box = boxes.value.find((b) => b.id === boxId);
@@ -71,17 +95,20 @@ const updateModelValue = () => {
   emit("update:modelValue", boxes.value);
 };
 
-
 const addBox = () => {
-  boxes.value.push({
-    id: Date.now(), // Unique ID for the box
-    values: Object.fromEntries(initialFields.map((key) => [key, ""])),
-  });
+  const newBox = {
+    id: Date.now(),
+    values: {
+      ...Object.fromEntries(initialFields.map((key) => [key, ""])),
+      ...initialValuesRef.value // Sử dụng .value để lấy giá trị từ ref
+    }
+  };
+  boxes.value.push(newBox);
   updateModelValue();
 };
+
 const removeBox = (id: number) => {
   boxes.value = boxes.value.filter((box) => box.id !== id);
   updateModelValue();
 };
 </script>
-

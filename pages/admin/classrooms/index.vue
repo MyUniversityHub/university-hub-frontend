@@ -20,6 +20,8 @@ const params = reactive({
 
 const visibleDeleteModal = ref(false);
 const visibleCreateModal = ref(false);
+const visibleImportModal = ref(false);
+const selectedFile = ref<File | null>(null);
 
 const { formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
 const isSingleDelete = ref<boolean>(false);
@@ -149,6 +151,55 @@ const handleUpdateStatus = async (event: Event, id: number) => {
   }
 };
 
+const confirmImport = () => {
+  selectedFile.value = "";
+  visibleImportModal.value = true;
+};
+
+const handleCloseImportModal = () => {
+  visibleImportModal.value = false;
+  selectedFile.value = null;
+};
+
+const handleImport = async () => {
+  if (!selectedFile.value) {
+    useNuxtApp().$toast.error("Vui lòng chọn tệp trước khi import!");
+    return;
+  }
+  const formData = new FormData();
+  formData.append("file", selectedFile.value);
+
+  try {
+    await apiClient.post(`/admin/classrooms/import-excel`, formData);
+    useNuxtApp().$toast.success("Import phòng học thành công!");
+    await fetchData();
+    if (dataList.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+    selectedFile.value = null;
+    visibleImportModal.value = false;
+  } catch (e) {
+    console.error("Error importing classrooms:", e);
+  }
+};
+
+const handleExport = async () => {
+  try {
+    const response = await apiClient.get(`/admin/classrooms/export-excel`);
+    const url = window.URL.createObjectURL(response);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = 'classrooms.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    useNuxtApp().$toast.success("Export phòng học thành công");
+  } catch (e) {
+    console.error("Error exporting classrooms:", e);
+  }
+};
+
 const columnHelper = createColumnHelper();
 const columns = [
   columnHelper.display({
@@ -250,7 +301,9 @@ const columns = [
       <template #button>
         <MenuButtonAction :on-delete="showFormDelete"
                           :number="selectedIds.size"
-                          :on-create="showFormCreate"/>
+                          :on-create="showFormCreate"
+                          :on-import="confirmImport"
+                          :on-export="handleExport"/>
       </template>
       <template #action>
         <div class="flex items-center justify-center gap-2">
@@ -319,6 +372,20 @@ const columns = [
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormDelete">Hủy</button>
       <button class="btn btn-danger" @click="handleDelete">Xóa</button>
+    </template>
+  </CommonModal>
+  <CommonModal
+      className="max-w-[600px] top-[15%]" title="Import phòng học" :isAction="true"
+      :visible="visibleImportModal"
+      @close="handleCloseImportModal"
+      @clickOutside="handleCloseImportModal"
+  >
+    <VeeForm id="import_classroom_confirm" @submit="handleImport">
+      <FileUploader v-model="selectedFile" accept=".xls,.xlsx" description="Chọn file Excel hoặc kéo thả vào đây (định dạng .xls, .xlsx, tối đa 5MB)" />
+    </VeeForm>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseImportModal">Hủy</button>
+      <button class="btn btn-primary" type="submit" form="import_classroom_confirm">Xác nhận</button>
     </template>
   </CommonModal>
 </template>

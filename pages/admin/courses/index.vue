@@ -24,6 +24,10 @@ const params = reactive({
 
 const visibleDeleteModal = ref(false);
 const visibleCreateModal = ref(false);
+const visibleImportModal = ref(false);
+const selectedFile = ref<File | null>(null);
+
+const coursesActive = ref<any[]>([]);
 
 const { formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
 const isSingleDelete = ref<boolean>(false);
@@ -40,17 +44,24 @@ const {
   fetchData
 } = useCommonList("/admin/courses", params);
 
+const fetchCoursesActive = async () => {
+  try {
+    const response = await apiClient.get('/admin/courses/active');
+    if (response && response.status) {
+      coursesActive.value = response.data;
+      totalRecords.value = response.data.length;
+    }
+  } catch (e) {
+    console.error("Error fetching courses active:", e);
+  }
+}
+
 const courseOptions = computed(() =>
-    dataList.value.map((course: any) => ({
+    coursesActive.value.map((course: any) => ({
       label: course.course_name,
       value: course.course_id,
     }))
 );
-
-const typeOptions = [
-  { label: "Tiên quyết", value: 1 },
-  { label: "Song song", value: 2 },
-];
 
 const handleDelete = async () => {
   visibleDeleteModal.value = false;
@@ -109,14 +120,7 @@ const showFormDelete = () => {
 };
 
 const showFormUpdate = (data: any) => {
-  const transformedPrerequisites = data.prerequisites.map((prerequisite: any) => ({
-    id: `${prerequisite.course_id}-${prerequisite.prerequisite_course_id}`,
-    values: {
-      prerequisite_course_id: prerequisite.prerequisite_course_id,
-      type: prerequisite.type,
-    },
-  }));
-
+  const transformedPrerequisites = data.prerequisites.map((prerequisite: any) => ([prerequisite.prerequisite_course_id]));
   Object.assign(
       formData,
       Object.fromEntries(
@@ -126,7 +130,6 @@ const showFormUpdate = (data: any) => {
           ])
       )
   );
-
   visibleCreateModal.value = true;
 };
 
@@ -140,7 +143,7 @@ const handleCreate = async () => {
     try {
       const response = await apiClient.post(`/admin/courses`, {...formData});
       useNuxtApp().$toast.success(response.message);
-      await fetchData();
+      await Promise.all([fetchData(), fetchCoursesActive()]);
       resetForm();
       visibleCreateModal.value = false;
     } catch (e) {
@@ -177,6 +180,59 @@ const handleUpdateStatus = async (event: Event, id: number) => {
   }
 };
 
+const confirmImport = () => {
+  selectedFile.value = "";
+  visibleImportModal.value = true;
+};
+
+const handleCloseImportModal = () => {
+  visibleImportModal.value = false;
+  selectedFile.value = null;
+};
+
+const handleImport = async () => {
+  if (!selectedFile.value) {
+    useNuxtApp().$toast.error("Vui lòng chọn tệp trước khi import!");
+    return;
+  }
+  const formData = new FormData();
+  formData.append("file", selectedFile.value);
+
+  try {
+    await apiClient.post(`/admin/courses/import-excel`, formData);
+    useNuxtApp().$toast.success("Import môn học thành công!");
+    await fetchData();
+    if (dataList.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+    selectedFile.value = null;
+    visibleImportModal.value = false;
+  } catch (e) {
+    console.error("Error importing courses:", e);
+  }
+};
+
+const handleExport = async () => {
+  try {
+    const response = await apiClient.get(`/admin/courses/export-excel`);
+    const url = window.URL.createObjectURL(response);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = 'courses.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    useNuxtApp().$toast.success("Export môn học thành công");
+  } catch (e) {
+    console.error("Error exporting courses:", e);
+  }
+};
+
+onMounted(() => {
+  fetchCoursesActive();
+});
+
 const columnHelper = createColumnHelper();
 const columns = [
   columnHelper.display({
@@ -197,7 +253,7 @@ const columns = [
           type: "checkbox",
           checked: selectedIds.value.size === dataList.value.length,
           class: "checkbox form-check-input pr-4",
-          onChange: (e) => handleSelectAll(e.target.checked, 'id'),
+          onChange: (e) => handleSelectAll(e.target.checked, 'course_id'),
         }),
       ]);
     },
@@ -288,7 +344,9 @@ const columns = [
       <template #button>
         <MenuButtonAction :on-delete="showFormDelete"
                           :number="selectedIds.size"
-                          :on-create="showFormCreate"/>
+                          :on-create="showFormCreate"
+                          :on-import="confirmImport"
+                          :on-export="handleExport"/>
       </template>
       <template #action>
         <div class="flex items-center justify-center gap-2">
@@ -349,36 +407,18 @@ const columns = [
           :required="true"
           rules="required|max:120"
       />
-      <DynamicInputBox titleBox="Môn học" v-model="formData.prerequisites" :fields="['prerequisite_course_id', 'type']">
-        <template #default="{ box, updateBoxValue, fields }">
-          <div :key="box.id">
-            <InputField
-                :id="'prerequisiteCourse' + '-' + box.id"
-                :name="'prerequisiteCourse' + '-' + box.id"
-                labelPosition="border"
-                label="Môn học tiên quyết"
-                v-model="box.values[fields[0]]"
-                :dataOptions="courseOptions"
-                inputType="select2"
-                labelClass="hidden"
-                inputClass="w-[200px]"
-                @update:modelValue="(value) => updateBoxValue(box.id, fields[0], value)"
-            />
-            <InputField
-                :id="'type' + '-' + box.id"
-                :name="'type' + '-' + box.id"
-                labelPosition="border"
-                label="Loại tiên quyết"
-                v-model="box.values[fields[1]]"
-                :dataOptions="typeOptions"
-                inputType="select2"
-                labelClass="hidden"
-                inputClass="w-[200px]"
-                @update:modelValue="(value) => updateBoxValue(box.id, fields[1], value)"
-            />
-          </div>
-        </template>
-      </DynamicInputBox>
+      <TagSelector
+          id="prerequisites"
+          name="prerequisites"
+          label="Môn học tiên quyết"
+          v-model="formData.prerequisites"
+          :data-options="courseOptions"
+          inputType="select2"
+          labelClass="w-[200px]"
+          inputClass="flex-1"
+          placeholder="Chọn môn học tiên quyết"
+          :multiple="true"
+      />
       <InputField
           id="credit_hours"
           name="credit_hours"
@@ -408,6 +448,20 @@ const columns = [
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormDelete">Hủy</button>
       <button class="btn btn-danger" @click="handleDelete">Xóa</button>
+    </template>
+  </CommonModal>
+  <CommonModal
+      className="max-w-[600px] top-[15%]" title="Import môn học" :isAction="true"
+      :visible="visibleImportModal"
+      @close="handleCloseImportModal"
+      @clickOutside="handleCloseImportModal"
+  >
+    <VeeForm id="import_course_confirm" @submit="handleImport">
+      <FileUploader v-model="selectedFile" accept=".xls,.xlsx" description="Chọn file Excel hoặc kéo thả vào đây (định dạng .xls, .xlsx, tối đa 5MB)" />
+    </VeeForm>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseImportModal">Hủy</button>
+      <button class="btn btn-primary" type="submit" form="import_course_confirm">Xác nhận</button>
     </template>
   </CommonModal>
 </template>

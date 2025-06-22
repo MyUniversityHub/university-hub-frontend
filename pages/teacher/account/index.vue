@@ -7,18 +7,21 @@ import {useNuxtApp} from "#app";
 import CommonModal from "~/components/atoms/modal/CommonModal.vue";
 
 const defaultFormCreate = {
-  student_id: '',
+  teacher_id: '',
   user_id: '',
-  student_code: '',
+  teacher_code: '',
   avatar: '',
-  phone_number: '',
+  phone: '',
   admission_year: '',
   address: '',
   birth_date: '',
   class_id: '',
   gender: 'male',
+  degree: '',
+  specialization: '',
   name: '',
   email: '',
+  department_name: '',
 };
 
 const changePassword = ref({
@@ -62,9 +65,9 @@ const handleChangePass = async () => {
   }
 };
 
-const fetchStudentData = async () => {
+const fetchTeacherData = async () => {
   try {
-    const response = await apiClient.get(`/student/info`);
+    const response = await apiClient.get(`/teacher/info`);
     if(response && response.status) {
       const data = response.data;
       Object.assign(
@@ -75,22 +78,22 @@ const fetchStudentData = async () => {
       );
     }
   } catch (error) {
-    console.error("Failed to fetch student data:", error);
+    console.error("Failed to fetch teacher data:", error);
   }
 };
 
 onMounted(() => {
-  fetchStudentData(); // Fetch data when the component is mounted
+  fetchTeacherData(); // Fetch data when the component is mounted
 });
 
 const handleSubmitForm = async () => {
   if (formData) {
     try {
-      const response = await apiClient.put(`/student/update-info/${formData.student_id}`, {...formData});
+      const response = await apiClient.put(`/teacher/update-info/${formData.teacher_id}`, {...formData});
       useNuxtApp().$toast.success(response.message);
       Object.assign(formData, response.data);
     } catch (e) {
-      console.error("Error updating student:", e);
+      console.error("Error updating teacher:", e);
     }
   }
 };
@@ -103,46 +106,56 @@ const handleSubmitForm = async () => {
   <VeeForm @submit="handleSubmitForm" id="triggerFormUpdate" class="text-2sm">
     <!-- Avatar -->
     <InputImg
-      id="avatar"
-      imgPreviewClass="w-[150px] h-[200px]"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
-      rules=""
-      name="avatar"
-      v-model="formData.avatar"
+        id="avatar"
+        imgPreviewClass="w-[150px] h-[200px]"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        rules=""
+        name="avatar"
+        v-model="formData.avatar"
     />
 
-    <!-- Student Code -->
     <InputField
-      id="student_code"
-      name="student_code"
-      label="Mã sinh viên"
-      v-model="formData.student_code"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
-      :disabled="true"
+        id="teacher_department"
+        name="teacher_department"
+        label="Khoa"
+        v-model="formData.department_name"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
+    />
+
+    <!-- Teacher Code -->
+    <InputField
+        id="teacher_code"
+        name="teacher_code"
+        label="Mã giảng viên"
+        v-model="formData.teacher_code"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
     />
 
     <!-- Name -->
     <InputField
-      id="name"
-      name="name"
-      label="Tên sinh viên"
-      v-model="formData.name"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
-      :disabled="true"
+        id="name"
+        name="name"
+        label="Tên giảng viên"
+        v-model="formData.name"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
     />
 
     <!-- Email -->
     <InputField
-      id="email"
-      name="email"
-      label="Email"
-      v-model="formData.email"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
-      :disabled="true"
+        id="email"
+        name="email"
+        label="Email"
+        v-model="formData.email"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
     />
 
     <!-- Năm nhập học -->
@@ -158,49 +171,49 @@ const handleSubmitForm = async () => {
 
     <!-- Phone Number -->
     <InputField
-      id="phone_number"
-      name="phone_number"
-      label="Số điện thoại"
-      v-model="formData.phone_number"
-      placeholder="Nhập số điện thoại"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
+        id="phone_number"
+        name="phone_number"
+        label="Số điện thoại"
+        v-model="formData.phone_number"
+        placeholder="Nhập số điện thoại"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
     />
 
     <!-- Address -->
     <InputField
-      id="address"
-      name="address"
-      label="Địa chỉ"
-      v-model="formData.address"
-      placeholder="Nhập địa chỉ"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
+        id="address"
+        name="address"
+        label="Địa chỉ"
+        v-model="formData.address"
+        placeholder="Nhập địa chỉ"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
     />
 
     <!-- Birth Date -->
     <InputField
-      id="birth_date"
-      name="birth_date"
-      label="Ngày sinh"
-      v-model="formData.birth_date"
-      placeholder="Nhập ngày sinh"
-      labelClass="w-[200px]"
-      inputClass="flex-1"
-      inputType="date"
+        id="birth_date"
+        name="birth_date"
+        label="Ngày sinh"
+        v-model="formData.birth_date"
+        placeholder="Nhập ngày sinh"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        inputType="date"
     />
 
     <!-- Gender -->
     <InputField
-      id="gender"
-      name="gender"
-      label="Giới tính"
-      v-model="formData.gender"
-      labelClass="w-[200px]"
-      placeholder="Chọn giới tính"
-      inputClass="flex-1"
-      inputType="dropdown"
-      :dataOptions="[
+        id="gender"
+        name="gender"
+        label="Giới tính"
+        v-model="formData.gender"
+        labelClass="w-[200px]"
+        placeholder="Chọn giới tính"
+        inputClass="flex-1"
+        inputType="dropdown"
+        :dataOptions="[
         { value: '0', label: 'Nam' },
         { value: '1', label: 'Nữ' },
         { value: '2', label: 'Khác' }

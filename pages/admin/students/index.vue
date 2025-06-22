@@ -13,6 +13,7 @@ import {ROLE_STUDENT} from "~/config/constants";
 
 const defaultFormCreate = {
   id: 0,
+  student_id: 0,
   name: '',
   user_name: '',
   email: '',
@@ -20,6 +21,8 @@ const defaultFormCreate = {
   password: '',
   role_id: 2,
   class_id: 0,
+  major_id: 0,
+  department_id: 0,
   active: 1,
 };
 
@@ -48,11 +51,13 @@ const classes = ref<Options[]>([]);
 const visibleDeleteModal = ref(false);
 const visibleCreateModal = ref(false);
 const visibleResetModal = ref(false);
+const visibleImportModal = ref(false);
+const selectedFile = ref<File | null>(null);
 
 const selectedDepartment = ref(0);
 const selectedMajor = ref(0);
 
-const { formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
+const {formData, resetForm, isFormDirty } = useFormData(defaultFormCreate);
 const isSingleDelete = ref<boolean>(false);
 const {handleInvalidSubmit} = useFormValidation();
 
@@ -79,7 +84,7 @@ const handleDelete = async () => {
   }
   try {
     const res = await apiClient.delete('/admin/users/bulk-delete', {
-      body: { ids: ids.value }
+      body: { ids: ids.value, role: 'STUDENT' }
     });
     if (res.status) {
       useNuxtApp().$toast.success(res.message);
@@ -115,7 +120,7 @@ const handleDelete = async () => {
 
 const fetchMajorsByDepartment = async () => {
   try {
-    const response = await apiClient.get(`/admin/majors/department/${selectedDepartment.value}`);
+    const response = await apiClient.get(`/admin/majors/department/${formData.department_id}`);
     if(response && response.status) {
       const tempMajors: Major[] = [];
       const tempMap = new Map<number, string>();
@@ -155,9 +160,51 @@ const fetchDepartmentsActive = async () => {
   }
 };
 
+const fetchMajorsActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/majors/active`);
+    if(response && response.status) {
+      const tempMajors: Major[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((major: any) => {
+        const newMajor = { label: major.major_name, value: major.major_id };
+        tempMajors.push(newMajor);
+        tempMap.set(newMajor.value, newMajor.label);
+      });
+
+      majors.value = tempMajors;
+      majorMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching majors active:", e);
+  }
+};
+
+const fetchClassesActive = async () => {
+  try {
+    const response = await apiClient.get(`/admin/classes/active`);
+    if(response && response.status) {
+      const tempClasses: Class[] = [];
+      // const tempMap = new Map<number, string>();
+
+      response.data.forEach((classes: any) => {
+        const newClass = { label: classes.class_name, value: classes.class_id };
+        tempClasses.push(newClass);
+        // tempMap.set(newDepartment.value, newDepartment.label);
+      });
+
+      classes.value = tempClasses;
+      // departmentMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
 const fetchClassesByMajor = async () => {
   try {
-    const response = await apiClient.get(`/admin/classes/major/${selectedMajor.value}`);
+    const response = await apiClient.get(`/admin/classes/major/${formData.major_id}`);
     if(response && response.status) {
       const tempClasses: Class[] = [];
       // const tempMap = new Map<number, string>();
@@ -178,6 +225,7 @@ const fetchClassesByMajor = async () => {
 
 onMounted(() => {
   fetchDepartmentsActive();
+  fetchMajorsActive();
 })
 
 
@@ -213,14 +261,14 @@ const showFormDelete = () => {
   visibleDeleteModal.value = true;
 }
 
-const showFormUpdate = (data: any) => {
+const showFormUpdate = async (data: any) => {
   Object.assign(
       formData,
       Object.fromEntries(
           Object.keys(defaultFormCreate).map((key) => [key, data[key] ?? defaultFormCreate[key]])
       )
   );
-  console.log(data, formData);
+  await fetchClassesActive();
   visibleCreateModal.value = true;
 }
 
@@ -301,6 +349,55 @@ const handleUpdateStatus = async (event: Event, id: number) => {
   }
 };
 
+const confirmImport = () => {
+  selectedFile.value = "";
+  visibleImportModal.value = true;
+};
+
+const handleCloseImportModal = () => {
+  visibleImportModal.value = false;
+  selectedFile.value = null;
+};
+
+const handleImport = async () => {
+  if (!selectedFile.value) {
+    useNuxtApp().$toast.error("Vui lòng chọn tệp trước khi import!");
+    return;
+  }
+  const formData = new FormData();
+  formData.append("file", selectedFile.value);
+
+  try {
+    await apiClient.post(`/admin/users/student/import-excel`, formData);
+    useNuxtApp().$toast.success("Import sinh viên thành công!");
+    await fetchData();
+    if (dataList.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+    selectedFile.value = null;
+    visibleImportModal.value = false;
+  } catch (e) {
+    console.error("Error importing students:", e);
+  }
+};
+
+const handleExport = async () => {
+  try {
+    const response = await apiClient.get(`/admin/users/student/export-excel`);
+    const url = window.URL.createObjectURL(response);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = 'students.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    useNuxtApp().$toast.success("Export sinh viên thành công");
+  } catch (e) {
+    console.error("Error exporting students:", e);
+  }
+};
+
 const columnHelper = createColumnHelper();
 const columns = [
   columnHelper.display({
@@ -321,12 +418,12 @@ const columns = [
           type: "checkbox",
           checked: selectedIds.value.size === dataList.value.length,
           class: "checkbox form-check-input pr-4",
-          onChange: (e) => handleSelectAll(e.target.checked, 'id'),
+          onChange: (e) => handleSelectAll(e.target.checked, 'student_id'),
         }),
       ]);
     },
     cell: ({ row }) => {
-      const id = row.original?.id;
+      const id = row.original?.student_id;
       return h("div", { class: "flex justify-center items-center" }, [
         h("input", {
           'data-tooltip': selectedIds.value.has(id) ? 'Bỏ chọn' : 'Chọn',
@@ -401,7 +498,7 @@ const columns = [
               onClick: () => {
                 visibleDeleteModal.value = true;
                 isSingleDelete.value = true;
-                selectedIds.value.add(row.original?.id);
+                selectedIds.value.add(row.original?.student_id);
               },
             }, [
               h('i', { class: 'fa-solid fa-trash text-lg text-danger' })
@@ -421,7 +518,9 @@ const columns = [
       <template #button>
         <MenuButtonAction :on-delete="showFormDelete"
                           :number="selectedIds.size"
-                          :on-create="showFormCreate"/>
+                          :on-create="showFormCreate"
+                          :on-import="confirmImport"
+                          :on-export="handleExport"/>
       </template>
       <template #action>
         <div class="flex items-center justify-center gap-2">
@@ -464,12 +563,12 @@ const columns = [
       width="800px"
       @close="handleCloseFormCreate"
       @clickOutside="handleCloseFormCreate"
-      @confirm="formData.id ? handleUpdate() : handleCreate()"
+      @confirm="formData.student_id ? handleUpdate() : handleCreate()"
       :isFormDirty="isFormDirty">
     <template #header>
-      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} sinh viên</h2>
+      <h2 class="text-xl font-bold">{{formData.student_id ? 'Cập nhật' : 'Thêm mới'}} sinh viên</h2>
     </template>
-    <VeeForm @submit="formData.id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
+    <VeeForm @submit="formData.student_id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
       <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
       <InputField
           id="name"
@@ -508,11 +607,9 @@ const columns = [
           id="department"
           name="department"
           label="Khoa"
-          v-model="selectedDepartment"
+          v-model="formData.department_id"
           :dataOptions="departments"
           inputType="select2"
-          :required="true"
-          rules="required"
           inputClass="w-full"
           selectPlaceholder="Chọn khoa"
           @change="fetchMajorsByDepartment"
@@ -521,11 +618,9 @@ const columns = [
           id="major"
           name="major"
           label="Chuyên ngành"
-          v-model="selectedMajor"
+          v-model="formData.major_id"
           :dataOptions="majors"
           inputType="select2"
-          :required="true"
-          rules="required"
           inputClass="w-full"
           selectPlaceholder="Chọn chuyên ngành"
           @change="fetchClassesByMajor"
@@ -545,7 +640,7 @@ const columns = [
     </VeeForm>
     <template #footer>
       <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>
-      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.id ? 'Cập nhật' : 'Thêm mới'}}</button>
+      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.student_id ? 'Cập nhật' : 'Thêm mới'}}</button>
     </template>
   </CommonModal>
   <CommonModal
@@ -574,6 +669,20 @@ const columns = [
     <template #footer>
       <button class="btn btn-light" @click="visibleResetModal = false">Hủy</button>
       <button class="btn btn-primary" @click="handleReset">Xác nhận</button>
+    </template>
+  </CommonModal>
+  <CommonModal
+      className="max-w-[600px] top-[15%]" title="Import sinh viên" :isAction="true"
+      :visible="visibleImportModal"
+      @close="handleCloseImportModal"
+      @clickOutside="handleCloseImportModal"
+  >
+    <VeeForm id="import_student_confirm" @submit="handleImport">
+      <FileUploader v-model="selectedFile" accept=".xls,.xlsx" description="Chọn file Excel hoặc kéo thả vào đây (định dạng .xls, .xlsx, tối đa 5MB)" />
+    </VeeForm>
+    <template #footer>
+      <button class="btn btn-light" @click="handleCloseImportModal">Hủy</button>
+      <button class="btn btn-primary" type="submit" form="import_student_confirm">Xác nhận</button>
     </template>
   </CommonModal>
 </template>

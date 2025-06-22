@@ -82,7 +82,7 @@ export function useCommonList(apiEndpoint: string, initialParams = {}, isPaginat
     watch(
         () => state.selectedIds,
         (newVal, oldVal) => {
-            console.log("selectedIds đã thay đổi:", newVal);
+            console.log("Selected IDs:", Array.from(newVal));
         },
         { deep: true }
     );

@@ -2,14 +2,16 @@
 import {useRouter} from 'vue-router';
 import {useUserStore} from "~/stores/userStore";
 import CommonModal from "~/components/atoms/modal/CommonModal.vue";
+import {ref} from "vue";
 
 const router = useRouter();
 const visibleUpdateModal = ref(false);
+const notifications = ref<any[]>([]);
 
 const userStore = useUserStore();
 const accountPath = computed(() => {
-  const role = userStore.roleName.toLowerCase(); // Get the role and convert it to lowercase
-  return `/${role}/account`; // Construct the path dynamically
+  const role = userStore.roleName.toLowerCase();
+  return `/${role}/account`;
 });
 
 const handleCloseFormCreate = () => {
@@ -19,28 +21,75 @@ const handleCloseFormCreate = () => {
   }
   visibleCreateModal.value = false;
 };
+
 async function logout() {
   try {
-    // Gửi yêu cầu logout tới server
     await apiClient.post('/logout');
   } catch (error: any) {
-    // Xử lý lỗi
     console.error(error);
   } finally {
-    // Xóa token và token_type khỏi cookie
     useCookie('auth_token').value = null;
     useCookie('token_type').value = null;
     useCookie('refresh_token').value = null;
-    // Xóa thời gian hết hạn token khỏi localStorage
     localStorage.removeItem('token_expire_time');
     router.push('/login');
   }
 }
 
+const fetchNotifications = async () => {
+  try {
+    const response = await apiClient.get(`/notifications`);
+    if(response && response.status) {
+      notifications.value = response.data;
+    }
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
+};
+
+onMounted(() => {
+  fetchNotifications();
+});
+
+// Notification states
 const hidden = ref(false);
+const notificationHidden = ref(false);
+// const notifications = ref([
+//   { id: 1, title: 'Thông báo mới', content: 'Bạn có một tin nhắn mới', read: false, time: '10 phút trước' },
+//   { id: 2, title: 'Cập nhật hệ thống', content: 'Hệ thống sẽ bảo trì vào 2h sáng', read: false, time: '1 giờ trước' },
+//   { id: 3, title: 'Hoàn thành nhiệm vụ', content: 'Nhiệm vụ của bạn đã được hoàn thành', read: true, time: '2 ngày trước' },
+//   { id: 4, title: 'Hoàn thành nhiệm vụ', content: 'Nhiệm vụ của bạn đã được hoàn thành', read: true, time: '2 ngày trước' },
+//   { id: 5, title: 'Hoàn thành nhiệm vụ', content: 'Nhiệm vụ của bạn đã được hoàn thành', read: true, time: '2 ngày trước' },
+//   { id: 6, title: 'Hoàn thành nhiệm vụ', content: 'Nhiệm vụ của bạn đã được hoàn thành', read: true, time: '2 ngày trước' },
+//   { id: 7, title: 'Hoàn thành nhiệm vụ', content: 'Nhiệm vụ của bạn đã được hoàn thành', read: true, time: '2 ngày trước' },
+//   { id: 8, title: 'Hoàn thành nhiệm vụ', content: 'Nhiệm vụ của bạn đã được hoàn thành', read: true, time: '2 ngày trước' },
+//
+// ]);
+
+const unreadCount = computed(() => {
+  return notifications.value.filter(n => n.status === 0).length;
+});
 
 const openPopup = () => {
   hidden.value = !hidden.value;
+  notificationHidden.value = false; // Đóng popup thông báo nếu đang mở
+};
+
+const openNotificationPopup = async () => {
+  notificationHidden.value = !notificationHidden.value;
+  hidden.value = false;
+
+  // Đánh dấu tất cả thông báo là đã đọc trên frontend
+  notifications.value = notifications.value.map(n => ({
+    ...n,
+    status: 1
+  }));
+
+  try {
+    await apiClient.put('/notifications/read');
+  } catch (e) {
+    console.error("Error fetching departments active:", e);
+  }
 };
 </script>
 
@@ -61,7 +110,46 @@ const openPopup = () => {
             <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Flowbite</span>
           </a>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center gap-4">
+          <!-- Notification Bell -->
+          <div class="relative">
+            <button @click="openNotificationPopup" class="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white relative">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              <span v-if="unreadCount > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                {{ unreadCount }}
+              </span>
+            </button>
+
+            <!-- Notification Dropdown -->
+            <div v-if="notificationHidden" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg dark:bg-gray-700 z-50">
+              <div class="p-3 border-b border-gray-200 dark:border-gray-600">
+                <h3 class="font-medium text-gray-900 dark:text-white">Thông báo</h3>
+              </div>
+              <div class="max-h-96 overflow-y-auto">
+                <div v-for="notification in notifications" :key="notification.id"
+                     class="p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                     :class="{ 'bg-gray-50 dark:bg-gray-600': !notification.status }">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <h4 class="font-medium text-gray-900 dark:text-white">{{ notification.title }}</h4>
+                      <p class="text-sm text-gray-500 dark:text-gray-300">{{ notification.message }}</p>
+                    </div>
+                    <span class="text-xs text-gray-400">{{ notification.time }}</span>
+                  </div>
+                </div>
+                <div v-if="notifications.length === 0" class="p-3 text-center text-gray-500 dark:text-gray-300">
+                  Không có thông báo mới
+                </div>
+              </div>
+              <div class="p-3 text-center border-t border-gray-200 dark:border-gray-600">
+                <a href="#" class="text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline">Xem tất cả</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Avatar -->
           <div class="flex items-center ms-3 relative" @click="openPopup">
             <div>
               <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
@@ -92,58 +180,5 @@ const openPopup = () => {
       </div>
     </div>
   </nav>
-  <!-- End Header -->
-  <CommonModal
-      :visible="visibleUpdateModal"
-      title="Thay đổi mật khẩu"
-      width="800px"
-      @close="handleCloseFormCreate"
-      @clickOutside="handleCloseFormCreate"
-      @confirm="formData.id ? handleUpdate() : handleCreate()"
-      :isFormDirty="isFormDirty">
-    <template #header>
-      <h2 class="text-xl font-bold">{{formData.id ? 'Cập nhật' : 'Thêm mới'}} khoa</h2>
-    </template>
-    <VeeForm @submit="formData.id ? handleUpdate() : handleCreate()" @invalid-submit="handleInvalidSubmit" id="triggerFormCreateUpdate">
-      <p class="italic mb-3">Những ô có dấu (<span class="text-danger">*</span>) là bắt buộc phải nhập</p>
-      <InputField
-          id="code"
-          name="code"
-          label="Mã khoa"
-          placeholder="Nhập mã khoa"
-          v-model="formData.code"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|max:20|latin_numbers_only"
-      />
-      <InputField
-          id="name"
-          name="name"
-          label="Tên khoa"
-          placeholder="Nhập tên khoa"
-          v-model="formData.name"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|only_letters|max:120"
-      />
-      <InputField
-          id="description"
-          name="description"
-          input-type="textarea"
-          label="Mô tả"
-          placeholder="Nhập mô tả"
-          v-model="formData.description"
-          labelClass="w-[200px]"
-          inputClass="flex-1"
-          :required="true"
-          rules="required|no_emojis"
-      />
-    </VeeForm>
-    <template #footer>
-      <button class="btn btn-light" @click="handleCloseFormCreate">Hủy</button>
-      <button type="submit" form="triggerFormCreateUpdate" class="btn btn-primary">{{formData.id ? 'Cập nhật' : 'Thêm mới'}}</button>
-    </template>
-  </CommonModal>
+
 </template>
