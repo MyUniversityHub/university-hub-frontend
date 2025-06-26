@@ -100,6 +100,29 @@ const fetchMajorsActive = async () => {
   }
 };
 
+function handleScoreInput(
+    e: Event,
+    row: any,
+    field: 'frequent_score_1' | 'frequent_score_2' | 'frequent_score_3' | 'final_score'
+) {
+  const input = e.target as HTMLInputElement;
+  let rawValue = input.value;
+
+  // Nếu đang nhập dấu thập phân thì không xử lý vội (ví dụ: "9.")
+  if (rawValue.endsWith('.')) {
+    row.original[field] = rawValue;
+    return;
+  }
+
+  let value = parseFloat(rawValue);
+
+  if (isNaN(value)) value = 0;
+  if (value > 10) value = 10;
+  if (value < 0) value = 0;
+
+  row.original[field] = value;
+}
+
 const fetchClassroomActive = async () => {
   try {
     const response = await apiClient.get(`/teacher/classrooms/active`);
@@ -258,9 +281,7 @@ const studentColumns = [
         min: 0,
         max: 10,
         step: 0.1,
-        onInput: (e: Event) => {
-          row.original.frequent_score_1 = parseFloat((e.target as HTMLInputElement).value);
-        }
+        onInput: (e: Event) => handleScoreInput(e, row, 'frequent_score_1')
       }),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
@@ -274,9 +295,7 @@ const studentColumns = [
         min: 0,
         max: 10,
         step: 0.1,
-        onInput: (e: Event) => {
-          row.original.frequent_score_2 = parseFloat((e.target as HTMLInputElement).value);
-        }
+        onInput: (e: Event) => handleScoreInput(e, row, 'frequent_score_2')
       }),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
@@ -290,9 +309,7 @@ const studentColumns = [
         min: 0,
         max: 10,
         step: 0.1,
-        onInput: (e: Event) => {
-          row.original.frequent_score_3 = parseFloat((e.target as HTMLInputElement).value);
-        }
+        onInput: (e: Event) => handleScoreInput(e, row, 'frequent_score_3')
       }),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
@@ -306,9 +323,7 @@ const studentColumns = [
           min: 0,
           max: 10,
           step: 0.1,
-          onInput: (e: Event) => {
-            row.original.final_score = parseFloat((e.target as HTMLInputElement).value);
-          }
+          onInput: (e: Event) => handleScoreInput(e, row, 'final_score')
         }),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),

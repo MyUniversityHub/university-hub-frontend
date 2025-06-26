@@ -66,6 +66,11 @@ const columns = [
     cell: info => info.getValue(),
     meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
   }),
+  columnHelper.accessor('final_score', {
+    header: 'Điểm thi',
+    cell: info => info.getValue(),
+    meta: { headerClassName: 'min-w-[165px]', cellClassName: 'capitalize px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'}
+  }),
   columnHelper.accessor('absent_sessions', {
     header: 'Số tiết nghỉ',
     cell: info => info.getValue(),

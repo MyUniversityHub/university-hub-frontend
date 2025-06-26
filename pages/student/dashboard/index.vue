@@ -19,7 +19,7 @@ const todaySchedule = ref([
 // ])
 const progress = ref([
   { label: 'Tín chỉ đã tích lũy', value: 0, max: 0 },
-  { label: 'Tín chỉ đang học', value: 0, max: 18 }
+  { label: 'Tín chỉ đang học', value: 0, max: 30 }
 ])
 const events = ref([
   { id: 1, title: 'Hạn đăng ký học phần', date: '2024-06-10' },

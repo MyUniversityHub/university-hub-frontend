@@ -69,8 +69,7 @@ const fetchCurriculumPrograms = async () => {
     ]);
 
     if (programsResponse && programsResponse.status) {
-      const registeredCourses = scheduleResponse?.data?.map((item: any) => item.course_name) || [];
-
+      const registeredCourses = scheduleResponse?.data?.filter((item: any) => item.status !== 0).map((item: any) => item.course_name) || [];
       dataList.value = programsResponse.data.map((item: any) => ({
         ...item,
         is_registered: registeredCourses.includes(item.course_name)
@@ -162,15 +161,15 @@ const validateSchedule = (newClass: CourseClass) => {
     errors.details.push('Lớp học đã đầy');
   }
 
-  // Kiểm tra trùng môn học
-  const isSameCourseRegistered = currentSchedule.value.some(
-      item => item.course_name === newClass.course_name
-  );
-
-  if (isSameCourseRegistered) {
-    errors.sameCourse = true;
-    errors.details.push('Bạn đã đăng ký môn học này');
-  }
+  // // Kiểm tra trùng môn học
+  // const isSameCourseRegistered = currentSchedule.value.some(
+  //     item => item.course_name === newClass.course_name
+  // );
+  //
+  // if (isSameCourseRegistered) {
+  //   errors.sameCourse = true;
+  //   errors.details.push('Bạn đã đăng ký môn học này');
+  // }
 
   // Kiểm tra trùng thời gian
   const newDays = newClass.weekdays;

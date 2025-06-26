@@ -43,9 +43,10 @@ const userStore = useUserStore();
 const totalTuitionFee = computed(() => {
   return Array.from(selectedIds.value).reduce((total, id) => {
     const course = dataList.value.find((item) => item.course_class_id === id);
-    return total + (course ? course.total_amount : 0);
+    return total + (course ? parseInt(course.total_amount) : 0);
   }, 0);
 });
+
 
 const handlePayTuitionFee = async () => {
   const allSelectedIds = Array.from(selectedIds.value);
@@ -259,9 +260,6 @@ const columns2 = [
           </div>
 
           <!-- Footer Note (optional) -->
-          <p class="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-            Hệ thống sẽ tự động trừ tiền từ tài khoản của bạn
-          </p>
         </div>
       </div>
       <TableDefault :columns="columns2" :data="completedPayments" />

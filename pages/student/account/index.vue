@@ -19,6 +19,9 @@ const defaultFormCreate = {
   gender: 'male',
   name: '',
   email: '',
+  major_name: '',
+  department_name: '',
+  current_semester: '',
 };
 
 const changePassword = ref({
@@ -101,6 +104,8 @@ const handleSubmitForm = async () => {
     <button type="submit" class="btn btn-primary float-right" @click="visibleChangePassModal = true;">Thay đổi mật khẩu</button>
   </div>
   <VeeForm @submit="handleSubmitForm" id="triggerFormUpdate" class="text-2sm">
+
+
     <!-- Avatar -->
     <InputImg
       id="avatar"
@@ -110,6 +115,37 @@ const handleSubmitForm = async () => {
       rules=""
       name="avatar"
       v-model="formData.avatar"
+    />
+
+    <InputField
+        id="current_semester"
+        name="current_semester"
+        label="Kỳ học"
+        v-model="formData.current_semester"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
+    />
+
+    <InputField
+        id="student_department"
+        name="student_department"
+        label="Khoa"
+        v-model="formData.department_name"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
+    />
+
+    <!-- Student Code -->
+    <InputField
+        id="student_major"
+        name="student_major"
+        label="Chuyên ngành"
+        v-model="formData.major_name"
+        labelClass="w-[200px]"
+        inputClass="flex-1"
+        :disabled="true"
     />
 
     <!-- Student Code -->
@@ -163,6 +199,7 @@ const handleSubmitForm = async () => {
       label="Số điện thoại"
       v-model="formData.phone_number"
       placeholder="Nhập số điện thoại"
+      rules="phone"
       labelClass="w-[200px]"
       inputClass="flex-1"
     />

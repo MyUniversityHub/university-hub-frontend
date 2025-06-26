@@ -116,10 +116,6 @@ onMounted(async () => {
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold text-lg mb-3">Biểu đồ SV theo ngành</h2>
-        <canvas id="adminMajorChart"></canvas>
-      </div>
-      <div class="bg-white rounded-lg shadow p-4">
         <h2 class="font-semibold text-lg mb-3">Thông báo mới</h2>
         <div v-if="notifications.length === 0" class="text-gray-400">Không có thông báo mới</div>
         <ul v-else>

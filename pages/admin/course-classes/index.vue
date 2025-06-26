@@ -332,6 +332,28 @@ const fetchTeacherActive = async () => {
   }
 };
 
+const fetchTeacherByMajorId = async () => {
+  try {
+    const response = await apiClient.get(`/admin/teachers/major/${formData.major_id}`);
+    if (response && response.status) {
+      const tempTeachers: Options[] = [];
+      const tempMap = new Map<number, string>();
+
+      response.data.forEach((teacher: any) => {
+        const newTeacher = { label: teacher.user.name, value: teacher.teacher_id };
+        tempTeachers.push(newTeacher);
+        tempMap.set(newTeacher.value, newTeacher.label);
+      });
+
+      teachers.value = tempTeachers;
+      teacherMap.value = tempMap;
+    }
+  } catch (e) {
+    console.error("Error fetching teachers active:", e);
+  }
+};
+
+
 
 onMounted(() => {
   fetchCourseActive();
@@ -575,18 +597,7 @@ const columns = [
           inputClass="w-full"
           selectPlaceholder="Chọn môn học"
       />
-      <InputField
-          id="teacher"
-          name="teacher"
-          label="Giảng viên"
-          v-model="formData.teacher_id"
-          :dataOptions="teachers"
-          inputType="select2"
-          :required="true"
-          rules="required"
-          inputClass="w-full"
-          selectPlaceholder="Chọn môn học"
-      />
+
       <InputField
           id="major"
           name="major"
@@ -598,6 +609,20 @@ const columns = [
           rules="required"
           inputClass="w-full"
           selectPlaceholder="Chọn chuyên ngành"
+          @change="fetchTeacherByMajorId"
+      />
+
+      <InputField
+          id="teacher"
+          name="teacher"
+          label="Giảng viên"
+          v-model="formData.teacher_id"
+          :dataOptions="teachers"
+          inputType="select2"
+          :required="true"
+          rules="required"
+          inputClass="w-full"
+          selectPlaceholder="Chọn môn học"
       />
 
       <TagSelector
